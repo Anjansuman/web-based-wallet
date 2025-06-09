@@ -1,8 +1,10 @@
 import { useState } from "react";
-import * as bip39 from "bip39";
-import { wordlist } from "@scure/bip39/wordlists/czech";
-import { HDKey } from "@scure/bip32";
-import { Wallet } from "@ethereumjs/wallet";
+import { wordlist } from "@scure/bip39/wordlists/english";
+import { usePopUp } from "../../context/PopUpPanelContext";
+import { useRef } from "react";
+import { validateMnemonic } from "@scure/bip39";
+// import { HDKey } from "@scure/bip32";
+// import { Wallet } from "@ethereumjs/wallet";
 
 interface ImportSeedProps {
     onComplete: (privateKey: string) => void
@@ -10,32 +12,37 @@ interface ImportSeedProps {
 
 export default function ImportSeed({ onComplete }: ImportSeedProps) {
 
-    const [mnemonic, setMnemonic] = useState<string>("");
+    const { showPanel } = usePopUp();
+    const [mnemonicArray, setMnemonicArray] = useState<string[]>(Array(12).fill(""));
+    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     const handleContinue = () => {
-
-        if (!bip39.validateMnemonic(mnemonic, wordlist)) {
-            // show invalid seed phrase
-            return;
+        try {
+            const mnemonic = mnemonicArray.join(" ").trim();
+            if (!validateMnemonic(mnemonic, wordlist)) {
+                showPanel("Invalid Seed Phrase", "error");
+                return;
+            }
+            onComplete(mnemonic);
+        } catch (error) {
+            showPanel("Error occured while parsing mnemonics", "error");
         }
-
-        const seed = bip39.mnemonicToSeedSync(mnemonic);
-        const hdkey = HDKey.fromMasterSeed(seed);
-        const childKey = hdkey.derive("m/44'/60'/0'/0/0");
-
-        if (!childKey.privateKey) {
-            // show private failed to crate
-            return;
-        }
-
-        const wallet = Wallet.fromPrivateKey(childKey.privateKey);
-        const privateKeyHex = Buffer.from(wallet.getPrivateKey()).toString("hex");
-
-        onComplete(privateKeyHex);
-
     }
 
-    return <div className="h-full w-full p-4 flex flex-col justify-between items-start ">
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+        if(e.key === " " && index < 12) {
+            e.preventDefault(); // prevent space to enter in the next input box
+            const nextInput = inputRefs.current[index + 1];
+            if(nextInput) nextInput.focus();
+
+        } else if(e.key === "Backspace" && mnemonicArray[index] === "" && index > 0) {
+            e.preventDefault();
+            const prevInput = inputRefs.current[index - 1];
+            if(prevInput) prevInput.focus();
+        }
+    }
+
+    return <div className="h-full w-full py-10 px-4 flex flex-col justify-around items-start ">
         <div className="text-[16px] font-semibold text-[#ff4d67] ">
             Generate a new Mnemonic Phrase
         </div>
@@ -49,8 +56,19 @@ export default function ImportSeed({ onComplete }: ImportSeedProps) {
                         {index + 1 + "."}
                     </div>
                     <input
+                        type="text"
+                        ref={(el) => {
+                            inputRefs.current[index] = el
+                        }}
                         className="w-full outline-none focus:outline-none focus:ring-0 border-none bg-transparent text-white "
-                        onChange={(e) => setMnemonic(e.target.value)}
+                        onChange={(e) => {
+                            setMnemonicArray((prev) => {
+                                const updated = [...prev];
+                                updated[index] = e.target.value;
+                                return updated;
+                            })
+                        }}
+                        onKeyDown={(e) => handleKeyDown(e, index)}
                     />
                 </div>
             ))}

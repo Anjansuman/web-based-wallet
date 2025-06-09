@@ -2,11 +2,11 @@ import { useState } from "react";
 import crypto from "crypto-js";
 
 interface setPasswordProps {
-    privateKey: string,
+    seed: string,
     onComplete: () => void
 }
 
-export default function SetPassword({ privateKey, onComplete }: setPasswordProps) {
+export default function SetPassword({ seed, onComplete }: setPasswordProps) {
 
     const [password, setPassword] = useState("");
 
@@ -19,7 +19,7 @@ export default function SetPassword({ privateKey, onComplete }: setPasswordProps
         });
 
         const iv = crypto.lib.WordArray.random(16).toString();
-        const encrypted = crypto.AES.encrypt(privateKey, key.toString(), {
+        const encrypted = crypto.AES.encrypt(seed, key.toString(), {
             iv: crypto.enc.Hex.parse(iv)
         }).toString();
 

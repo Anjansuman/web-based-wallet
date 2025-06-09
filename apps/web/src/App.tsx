@@ -11,7 +11,7 @@ type Stage = "loading" | "import" | "setPassword" | "unlock" | "dashboard"
 function App() {
 
   const [stage, setStage] = useState<Stage>("loading");
-  const [tempPrivateKey, setTempPrivateKey] = useState<string | null>(null);
+  const [tempSeed, setTempSeed] = useState<string | null>(null);
 
   useEffect(() => {
 
@@ -24,14 +24,14 @@ function App() {
   if(stage === "loading") return null;
 
   if(stage === "import") {
-    return <Seed onComplete={(privateKey) => {
-      setTempPrivateKey(privateKey);
+    return <Seed onComplete={(seed) => {
+      setTempSeed(seed);
       setStage("setPassword");
     }} />
   }
 
-  if(stage === "setPassword" && tempPrivateKey) {
-    return <SetPassword privateKey={tempPrivateKey} onComplete={() => setStage("dashboard")} />
+  if(stage === "setPassword" && tempSeed) {
+    return <SetPassword seed={tempSeed} onComplete={() => setStage("dashboard")} />
   }
 
   if(stage === "unlock") {

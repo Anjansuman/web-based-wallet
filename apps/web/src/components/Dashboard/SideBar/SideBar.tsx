@@ -5,7 +5,7 @@ interface SideBarProps {
 }
 
 export default function SideBar({ close }: SideBarProps) {
-    return <div className="absolute z-60 h-[584px] w-14 bg-black rounded-md p-2 flex flex-col justify-between items-center ">
+    return <div className="absolute z-40 h-[584px] w-14 bg-black rounded-md p-2 flex flex-col justify-between items-center ">
         <div
             className="hover:bg-white transition-colors p-1 rounded-sm cursor-pointer "
 onClick={close}

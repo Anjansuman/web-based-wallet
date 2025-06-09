@@ -1,11 +1,11 @@
 import { useState } from "react";
 import ImportSeed from "./ImportSeed";
 
-import image from "../../Images/logo.png";
+import image from "../../../public/images/logo.png";
 import GenerateSeed from "./GenerateSeed";
 
 interface SeedProps {
-    onComplete: (privateKey: string) => void
+    onComplete: (seed: string) => void
 }
 
 type Choice = "noChoice" | "import" | "generate";
@@ -19,7 +19,7 @@ export default function Seed({ onComplete }: SeedProps) {
     }
 
     if(choice === "generate") {
-        return <GenerateSeed />
+        return <GenerateSeed onComplete={onComplete} />
     }
 
     return <div className="h-full w-full flex flex-col justify-around items-center py-10 px-4 ">
