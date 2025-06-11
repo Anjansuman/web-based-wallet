@@ -5,6 +5,7 @@ import Dashboard from "./components/Dashboard/Dashboard";
 import { useEffect } from "react";
 import Seed from "./components/Seed/Seed";
 import SetPassword from "./components/Password/SetPassword";
+import UnlockWallet from "./components/Password/UnlockWallet";
 
 type Stage = "loading" | "import" | "setPassword" | "unlock" | "dashboard"
 
@@ -35,7 +36,7 @@ function App() {
   }
 
   if(stage === "unlock") {
-    return <Dashboard />
+    return <UnlockWallet onUnlock={() => setStage("dashboard")} />
   }
 
   return <Dashboard />

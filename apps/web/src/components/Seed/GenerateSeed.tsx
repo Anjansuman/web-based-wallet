@@ -4,6 +4,7 @@ import { wordlist } from "@scure/bip39/wordlists/english";
 import { IconCircleCheckFilled, IconCopy } from "@tabler/icons-react";
 // import PopUp from "../ui/PopUp";
 import { usePopUp } from "../../context/PopUpPanelContext";
+import Button from "../ui/Button";
 
 interface GenerateSeedProps {
     onComplete: (seed: string) => void
@@ -80,26 +81,23 @@ export default function GenerateSeed({ onComplete }: GenerateSeedProps) {
             }
         </div>
         <div className="w-full flex flex-col justify-center items-start gap-y-3 ">
-            <div
-                className="w-full p-3 bg-[#1e1e1e] hover:bg-[#262626] transition-colors flex justify-center items-center gap-x-2 rounded-lg text-white text-sm font-semibold cursor-pointer "
-                onClick={handleCopy}
-            >
-                <div>
-                    {
-                        copied ? "Copied to clipboard" : "Copy Seed"
-                    }
-                </div>
-                {
-                    copied ? <IconCircleCheckFilled className="size-3 text-green-500 " /> : <IconCopy className="size-3 " />
+            <Button
+                content={
+                    <div className="flex justify-center items-center gap-x-2">
+                        <div>
+                            {
+                                copied ? "Copied to clipboard" : "Copy Seed"
+                            }
+                        </div>
+                        {
+                            copied ? <IconCircleCheckFilled className="size-3 text-green-500 " /> : <IconCopy className="size-3 " />
+                        }
+                    </div>
                 }
-            </div>
-            <button
-                className="w-full p-3 bg-[#ff4d67] hover:bg-[#FF6D7D] disabled:bg-[#cc3e52] disabled:cursor-not-allowed transition-colors flex justify-center items-center rounded-lg text-[#1e1e1e] text-sm font-semibold cursor-pointer "
-                disabled={!isChecked}
-                onClick={handleContinue}
-            >
-                Continue
-            </button>
+                onClick={handleCopy}
+            />
+
+            <Button content={"Continue"} onClick={handleContinue} colored disabled={!isChecked} />
 
             {/* check-box */}
             <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-white">

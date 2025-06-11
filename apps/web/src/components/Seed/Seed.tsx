@@ -3,6 +3,7 @@ import ImportSeed from "./ImportSeed";
 
 import image from "../../../public/images/logo.png";
 import GenerateSeed from "./GenerateSeed";
+import Button from "../ui/Button";
 
 interface SeedProps {
     onComplete: (seed: string) => void
@@ -38,18 +39,8 @@ export default function Seed({ onComplete }: SeedProps) {
             </div>
         </div>
         <div className="w-full flex flex-col gap-y-3 text-sm font-semibold ">
-            <div
-                className="w-full rounded-lg p-3 flex justify-center items-center text-white bg-[#1e1e1e] hover:bg-[#262626] transition-colors cursor-pointer "
-                onClick={() => setChoice("import")}
-            >
-                Import seed phrase
-            </div>
-            <div
-                className="w-full rounded-lg p-3 flex justify-center items-center text-[#1e1e1e] bg-[#ff4d67] hover:bg-[#FF6D7D] transition-colors cursor-pointer "
-                onClick={() => setChoice("generate")}
-            >
-                Generate seed phrase
-            </div>
+            <Button content={"Import seed phrase"} onClick={() => setChoice("import")} />
+            <Button content={"Generate seed phrase"} onClick={() => setChoice("generate")} colored />
         </div>
     </div>
 }

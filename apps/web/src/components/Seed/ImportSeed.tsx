@@ -3,6 +3,8 @@ import { wordlist } from "@scure/bip39/wordlists/english";
 import { usePopUp } from "../../context/PopUpPanelContext";
 import { useRef } from "react";
 import { validateMnemonic } from "@scure/bip39";
+import Button from "../ui/Button";
+import { useEffect } from "react";
 // import { HDKey } from "@scure/bip32";
 // import { Wallet } from "@ethereumjs/wallet";
 
@@ -15,6 +17,10 @@ export default function ImportSeed({ onComplete }: ImportSeedProps) {
     const { showPanel } = usePopUp();
     const [mnemonicArray, setMnemonicArray] = useState<string[]>(Array(12).fill(""));
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+    useEffect(() => {
+        inputRefs.current[0]?.focus();
+    }, []);
 
     const handleContinue = () => {
         try {
@@ -73,12 +79,7 @@ export default function ImportSeed({ onComplete }: ImportSeedProps) {
                 </div>
             ))}
         </div>
-        <div
-            className="w-full p-3 bg-[#ff4d67] hover:bg-[#FF6D7D] transition-colors flex justify-center items-center rounded-lg text-[#1e1e1e] text-sm font-semibold "
-            onClick={handleContinue}
-        >
-            Continue
-        </div>
+        <Button content={"Continue"} onClick={handleContinue} colored />
     </div>
 }
 
