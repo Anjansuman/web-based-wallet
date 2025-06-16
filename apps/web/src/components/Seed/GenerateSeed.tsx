@@ -7,7 +7,7 @@ import { usePopUp } from "../../context/PopUpPanelContext";
 import Button from "../ui/Button";
 
 interface GenerateSeedProps {
-    onComplete: (seed: string) => void
+    onComplete: (mnemonic: string) => void
 }
 
 export default function GenerateSeed({ onComplete }: GenerateSeedProps) {
@@ -22,8 +22,8 @@ export default function GenerateSeed({ onComplete }: GenerateSeedProps) {
 
     useEffect(() => {
         try {
-            const seed = generateMnemonic(wordlist);
-            setMnemonic(seed);
+            const mnemonic = generateMnemonic(wordlist);
+            setMnemonic(mnemonic);
         } catch (error) {
             showPanel("Error occured whle generating seed phrase", "error")
         }
@@ -86,7 +86,7 @@ export default function GenerateSeed({ onComplete }: GenerateSeedProps) {
                     <div className="flex justify-center items-center gap-x-2">
                         <div>
                             {
-                                copied ? "Copied to clipboard" : "Copy Seed"
+                                copied ? "Copied to clipboard" : "Copy Seed phrase"
                             }
                         </div>
                         {

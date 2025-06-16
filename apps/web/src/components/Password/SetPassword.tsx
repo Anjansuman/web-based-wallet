@@ -1,22 +1,24 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import crypto from "crypto-js";
-import { hdkey } from "@ethereumjs/wallet";
+import { Wallet } from "@ethereumjs/wallet";
+import { HDKey } from "@scure/bip32";
+
 
 import image from "../../../public/images/logo.png";
 import Button from "../ui/Button";
 import { usePopUp } from "../../context/PopUpPanelContext";
 import { IconEye, IconEyeOff } from "@tabler/icons-react";
 import type { AccountType } from "../../types/AccountType";
-import { useRef } from "react";
-import { useEffect } from "react";
+import { encrypt, PKBDF2, randomWordArray } from "../../utils/crypto";
+import { mnemonicToSeedSync } from "@scure/bip39";
 
 
 interface setPasswordProps {
-    seed: string,
+    mnemonic: string,
     onComplete: () => void
 }
 
-export default function SetPassword({ seed, onComplete }: setPasswordProps) {
+export default function SetPassword({ mnemonic, onComplete }: setPasswordProps) {
 
     const [password1, setPassword1] = useState("");
     const [password2, setPassword2] = useState("");
@@ -36,17 +38,13 @@ export default function SetPassword({ seed, onComplete }: setPasswordProps) {
                 return;
             }
 
-            const salt = crypto.lib.WordArray.random(16).toString();
+            const salt = randomWordArray(16).toString();
 
-            const key = crypto.PBKDF2(password1, salt, {
-                keySize: 256 / 32,
-                iterations: 100000
-            });
+            const key = PKBDF2(password1, salt);
 
-            const iv = crypto.lib.WordArray.random(16).toString();
-            const encrypted = crypto.AES.encrypt(seed, key.toString(), {
-                iv: crypto.enc.Hex.parse(iv)
-            }).toString();
+            const iv = randomWordArray(16).toString();
+
+            const encrypted = encrypt(mnemonic, key, iv).toString();
 
             // creating vault
             const vault = {
@@ -55,11 +53,27 @@ export default function SetPassword({ seed, onComplete }: setPasswordProps) {
                 iv
             };
 
-            const path = `m/44'/60'/0'/0'`;
-            const hdNode = hdkey.EthereumHDKey.fromMnemonic(seed);
-            const child = hdNode.derivePath(path);
+            // now the part of creating the first wallet from the mnemonic for ethereum
 
-            const hashAccount = crypto.AES.encrypt(child.privateExtendedKey(), key.toString(), {
+            const seed = mnemonicToSeedSync(mnemonic);
+
+            const path = `m/44'/60'/0'/0/0`;
+
+            const hdNode = HDKey.fromMasterSeed(seed);
+            const child = hdNode.derive(path);
+
+            if(!child.privateKey) {
+                throw new Error("child doesn't contain private key");
+            }
+
+            const wallet = Wallet.fromPrivateKey(child.privateKey);
+
+            const jsonString = JSON.stringify({
+               privateKey: "0x" + wallet.getPrivateKey(),// get private key from child,
+               publicKey: "0x" + wallet.getPublicKey()
+            });
+
+            const hashAccount = crypto.AES.encrypt(jsonString, key.toString(), {
                 iv: crypto.enc.Hex.parse(iv)
             });
 

@@ -6,7 +6,7 @@ import GenerateSeed from "./GenerateSeed";
 import Button from "../ui/Button";
 
 interface SeedProps {
-    onComplete: (seed: string) => void
+    onComplete: (mnemonic: string) => void
 }
 
 type Choice = "noChoice" | "import" | "generate";

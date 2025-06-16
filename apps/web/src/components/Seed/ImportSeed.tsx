@@ -9,7 +9,7 @@ import { useEffect } from "react";
 // import { Wallet } from "@ethereumjs/wallet";
 
 interface ImportSeedProps {
-    onComplete: (privateKey: string) => void
+    onComplete: (mnemonic: string) => void
 }
 
 export default function ImportSeed({ onComplete }: ImportSeedProps) {

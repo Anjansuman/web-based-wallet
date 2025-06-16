@@ -12,7 +12,7 @@ type Stage = "loading" | "import" | "setPassword" | "unlock" | "dashboard"
 function App() {
 
   const [stage, setStage] = useState<Stage>("loading");
-  const [tempSeed, setTempSeed] = useState<string | null>(null);
+  const [tempMnemonic, setTempMnemonic] = useState<string | null>(null);
 
   useEffect(() => {
 
@@ -25,14 +25,14 @@ function App() {
   if(stage === "loading") return null;
 
   if(stage === "import") {
-    return <Seed onComplete={(seed) => {
-      setTempSeed(seed);
+    return <Seed onComplete={(mnemonic) => {
+      setTempMnemonic(mnemonic);
       setStage("setPassword");
     }} />
   }
 
-  if(stage === "setPassword" && tempSeed) {
-    return <SetPassword seed={tempSeed} onComplete={() => setStage("dashboard")} />
+  if(stage === "setPassword" && tempMnemonic) {
+    return <SetPassword mnemonic={tempMnemonic} onComplete={() => setStage("dashboard")} />
   }
 
   if(stage === "unlock") {
