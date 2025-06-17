@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import crypto from "crypto-js";
 import { Wallet } from "@ethereumjs/wallet";
 import { HDKey } from "@scure/bip32";
 
@@ -8,8 +7,8 @@ import image from "../../../public/images/logo.png";
 import Button from "../ui/Button";
 import { usePopUp } from "../../context/PopUpPanelContext";
 import { IconEye, IconEyeOff } from "@tabler/icons-react";
-import type { AccountType } from "../../types/AccountType";
-import { encrypt, PKBDF2, randomWordArray } from "../../utils/crypto";
+import type { AccountType2 } from "../../types/AccountType";
+import { encryptMnemonic, encryptString, PKBDF2, randomWordArray, toHex } from "../../utils/crypto";
 import { mnemonicToSeedSync } from "@scure/bip39";
 
 
@@ -23,6 +22,7 @@ export default function SetPassword({ mnemonic, onComplete }: setPasswordProps) 
     const [password1, setPassword1] = useState("");
     const [password2, setPassword2] = useState("");
     const [passwordNotMatch, setPasswordNotMatch] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const { showPanel } = usePopUp();
@@ -31,64 +31,65 @@ export default function SetPassword({ mnemonic, onComplete }: setPasswordProps) 
         inputRef.current?.focus();
     }, []);
 
-    const handleEncrypt = () => {
-        try {
-            if (password1 != password2) {
-                showPanel("Password didn't match", "error");
-                return;
-            }
+const handleEncrypt = () => {
+    try {
+        if (password1 !== password2) {
+            showPanel("Password didn't match", "error");
+            return;
+        }
 
+        setLoading(true);
+
+        // Let the state update & re-render happen first
+        setTimeout(() => {
             const salt = randomWordArray(16).toString();
-
             const key = PKBDF2(password1, salt);
-
             const iv = randomWordArray(16).toString();
+            const encrypted = encryptMnemonic(mnemonic, key, iv).toString();
 
-            const encrypted = encrypt(mnemonic, key, iv).toString();
-
-            // creating vault
             const vault = {
-                ciphertext: encrypted, // encrypted seed
+                ciphertext: encrypted,
                 salt,
                 iv
             };
 
-            // now the part of creating the first wallet from the mnemonic for ethereum
-
             const seed = mnemonicToSeedSync(mnemonic);
-
             const path = `m/44'/60'/0'/0/0`;
-
             const hdNode = HDKey.fromMasterSeed(seed);
             const child = hdNode.derive(path);
 
-            if(!child.privateKey) {
+            if (!child.privateKey) {
                 throw new Error("child doesn't contain private key");
             }
 
             const wallet = Wallet.fromPrivateKey(child.privateKey);
+            const privateKey = toHex(wallet.getPrivateKey());
+            const publicKey = toHex(wallet.getPublicKey());
 
             const jsonString = JSON.stringify({
-               privateKey: "0x" + wallet.getPrivateKey(),// get private key from child,
-               publicKey: "0x" + wallet.getPublicKey()
+                privateKey: "0x" + privateKey,
+                publicKey: "0x" + publicKey
             });
 
-            const hashAccount = crypto.AES.encrypt(jsonString, key.toString(), {
-                iv: crypto.enc.Hex.parse(iv)
-            });
+            const hashAccount = encryptString(jsonString, key, iv);
 
-            const accounts: AccountType[] = [{
+            const accounts: AccountType2[] = [{
                 name: "account 1",
                 account: hashAccount
             }];
 
             chrome.storage.local.set({ vault });
-            chrome.storage.local.set({ accounts }, onComplete);
-        } catch (error) {
-            showPanel("Error occured while storing the password", "error");
-            return;
-        }
+            chrome.storage.local.set({ accounts }, () => {
+                setLoading(false);
+                onComplete();
+            });
+        }, 0);
+
+    } catch (error) {
+        setLoading(false);
+        showPanel("Error occured while storing the password", "error");
     }
+}; 
 
     const handleReEnterPassword = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newPassword2 = e.target.value;
@@ -108,7 +109,7 @@ export default function SetPassword({ mnemonic, onComplete }: setPasswordProps) 
             <Input placeholder="Create a password" onChange={(e) => setPassword1(e.target.value)} ref={inputRef} />
             <Input placeholder="Re-enter your password" onChange={handleReEnterPassword} error={passwordNotMatch} />
         </div>
-        <Button content={"Secure Wallet"} onClick={handleEncrypt} disabled={passwordNotMatch || !password1 || !password2} colored />
+        <Button content={"Secure Wallet"} onClick={handleEncrypt} disabled={passwordNotMatch || !password1 || !password2} colored loader={loading} />
     </div>
 }
 

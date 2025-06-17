@@ -6,7 +6,8 @@ import crypto from "crypto-js";
 import { useEffect } from "react";
 import { useRef } from "react";
 import { useAccount, useMnemonic } from "../../context/zustand";
-import type { Account, AccountType } from "../../types/AccountType";
+import type { Account, AccountType2 } from "../../types/AccountType";
+import { decryptMnemonic, decryptString, PKBDF2 } from "../../utils/crypto";
 
 interface UnlockWalletProps {
     onUnlock: () => void
@@ -16,8 +17,6 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
 
     const [password, setPassword] = useState<string | null>(null);
     const [error, setError] = useState<boolean>(false);
-
-    const [keyAndIv, setKeyAndIv] = useState<{ key: crypto.lib.WordArray, iv: string }>();
 
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -37,19 +36,17 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
             chrome.storage.local.get("vault", (data) => {
                 const { ciphertext, salt, iv } = data.vault;
 
-                const key = crypto.PBKDF2(password, salt, {
-                    keySize: 256 / 32,
-                    iterations: 100000
-                });
+                console.log("ciphertext: ", ciphertext);
+                console.log("salt: ", salt);
+                console.log("iv: ", iv);
 
-                setKeyAndIv({
-                    key: key,
-                    iv: iv
-                });
+                console.log(password);
 
-                const decryptedSeed = crypto.AES.decrypt(ciphertext, key.toString(), {
-                    iv: crypto.enc.Hex.parse(iv)
-                }).toString(crypto.enc.Utf8);
+                const key = PKBDF2(password, salt); // was logging keys
+
+                console.log(key);
+
+                const decryptedSeed = decryptMnemonic(ciphertext, key, iv).toString(crypto.enc.Utf8);
 
                 if (!decryptedSeed) {
                     setError(true);
@@ -57,35 +54,42 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
                 }
                 setError(false);
 
+                console.log("seed: ", decryptedSeed);
+
                 // store the decryptedSeed key in memory, use zustand or anything
                 setMnemonic(decryptedSeed);
 
-            });
+                chrome.storage.local.get("accounts", (data) => {
+                    const accounts: AccountType2[] = data.accounts;
 
-            if (!keyAndIv) throw new Error("Decoding failed!");
+                    console.log("All accounts: ", accounts);
 
-            chrome.storage.local.get("accounts", (data) => {
-                const accounts: AccountType[] = data.accounts;
+                    const decryptedAccounts = accounts.map((acc) => {
+                        const account = decryptString(acc.account, key, iv);
+                        console.log(account);
+                        return JSON.parse(account);
+                    });
 
-                const decryptedAccounts = accounts.map((acc) => {
-                    const account = crypto.AES.decrypt(acc.account, keyAndIv.key.toString(), {
-                        iv: crypto.enc.Hex.parse(keyAndIv.iv)
-                    }).toString(crypto.enc.Utf8);
-                    return JSON.parse(account);
+                    console.log("decrypted accounts: ", decryptedAccounts);
+
+                    const allAccounts: Account[] = decryptedAccounts.map((acc, i) => ({
+                        name: accounts[i].name,
+                        privateKey: acc.privateKey,
+                        publicKey: acc.publicKey,
+                    }));
+
+                    console.log("all accounts: ", allAccounts);
+
+                    setAccounts(allAccounts);
+                    onUnlock();
+
                 });
 
-                const allAccounts: Account[] = decryptedAccounts.map((acc, i) => ({
-                    name: accounts[i].name,
-                    privateKey: acc.privateKey,
-                    publicKey: acc.publicKey,
-                }));
-
-                setAccounts(allAccounts);
-
             });
 
-            onUnlock();
+            // if (!keyAndIv) throw new Error("Decoding failed!");
         } catch (error) {
+            console.log(error);
             showPanel("Error occured while entering password", "error");
             return;
         }

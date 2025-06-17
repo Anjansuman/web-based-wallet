@@ -5,6 +5,11 @@ export interface AccountType {
     account: crypto.lib.CipherParams
 }
 
+export interface AccountType2 {
+    name: string,
+    account: string
+}
+
 export interface Account {
     name: string,
     privateKey: string,
