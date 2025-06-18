@@ -12,7 +12,7 @@ export default function Dashboard() {
 
 
     return <div className="h-full w-full flex flex-col justify-start ">
-        <div className="h-full flex-grow p-2 ">
+        <div className="h-full flex-grow ">
             <NavBar sideBar={() => setSideBar(true)} />
             {
                 sideBar && <SideBar close={() => setSideBar(false)} />

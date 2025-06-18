@@ -53,6 +53,11 @@ const handleEncrypt = () => {
                 iv
             };
 
+            console.log("password: ", password1);
+            console.log("salt: ", salt);
+            console.log("key: ", key);
+            console.log("iv: ", iv);
+
             const seed = mnemonicToSeedSync(mnemonic);
             const path = `m/44'/60'/0'/0/0`;
             const hdNode = HDKey.fromMasterSeed(seed);
@@ -72,6 +77,8 @@ const handleEncrypt = () => {
             });
 
             const hashAccount = encryptString(jsonString, key, iv);
+
+            console.log("encrypt string: ", hashAccount);
 
             const accounts: AccountType2[] = [{
                 name: "account 1",

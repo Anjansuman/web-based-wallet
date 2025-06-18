@@ -2,7 +2,6 @@ import Button from "../ui/Button";
 import image from "../../../public/images/logo.png";
 import { useState } from "react";
 import { usePopUp } from "../../context/PopUpPanelContext";
-import crypto from "crypto-js";
 import { useEffect } from "react";
 import { useRef } from "react";
 import { useAccount, useMnemonic } from "../../context/zustand";
@@ -44,9 +43,9 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
 
                 const key = PKBDF2(password, salt); // was logging keys
 
-                console.log(key);
+                console.log("key: ", key);
 
-                const decryptedSeed = decryptMnemonic(ciphertext, key, iv).toString(crypto.enc.Utf8);
+                const decryptedSeed = decryptMnemonic(ciphertext, key, iv).toString();
 
                 if (!decryptedSeed) {
                     setError(true);
@@ -132,3 +131,17 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
         <Button content={"Unlock"} onClick={handlePassword} disabled={!password} colored />
     </div>
 }
+
+/*
+
+password:  123
+
+salt:  930098e972adac38a84fc083a8a28097
+
+key:  {$super: {…}, words: Array(8), sigBytes: 32, init: ƒ}$super: {init: ƒ, toString: ƒ, concat: ƒ, clamp: ƒ, clone: ƒ, …}init: ƒ ()sigBytes: 32words: (8) [-1078559376, 1463736671, -1974542652, 1472481191, -323766085, 1016456577, 572098416, -879939685][[Prototype]]: Object
+
+iv:  37a7e388ffcc024e3d2a66c0296ee751
+
+encrypt string:  ylwelNTpZHX6qZQ0W9k5TJ/0PIxt/iGZvE954z8kzuF368XC6oMqC5Y7DxZu37xLOXIMMx5W3JOai//oBN1meqh8//d3HN1RRlTMY92GKWD+RmkjYADQYhHkUIGnAziQRgfurgKGazSBI4MixGKfnfvUF5zH3z7GHc3HCGfS5nBpUg/rD2jdjsnjEVFlyS+EBgW3J30XJFfQEhKAxA7Dbs1Bb7TOkz7Zh2zn6S0+L7DP4Q3+gBspeEkZ0NDs8RllITEDkiXoYJSt3xD2BZJowTnZ61VxWWmLq4ovUpJ8zgOH6RlDHo0MDUKmTETcBjkT
+
+*/

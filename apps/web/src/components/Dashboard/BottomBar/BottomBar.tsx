@@ -2,7 +2,7 @@ import { IconBrandTelegram, IconHistoryToggle, IconHome, IconQrcode, IconTransfe
 
 
 export default function BottomBar() {
-    return <div className="h-14 w-full fixed bottom-0 left-0 px-3 py-2 flex justify-around items-center z-50 border-t-[1px] border-neutral-500 ">
+    return <div className="h-14 w-full fixed bottom-0 left-0 p-4 flex justify-around items-center z-40 border-t-[1px] border-neutral-500 ">
         <IconHome className="hover:text-[#ff4d67] transition-colors size-[30px] cursor-pointer " />
         <IconTransfer className="hover:text-[#ff4d67] transition-colors size-[30px] cursor-pointer "/>
         <IconHistoryToggle className="hover:text-[#ff4d67] transition-colors size-[30px] cursor-pointer "/>
