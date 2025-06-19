@@ -40,3 +40,15 @@ export const useAccount = create<AccountStore>((set) => ({
         accounts: state.accounts.filter((acc) => acc.publicKey !== publicKey)
     }))
 }));
+
+interface Network {
+    network: string,
+    setNetwork: (network: string) => void
+}
+
+export const useNetwork = create<Network>((set) => ({
+    network: "",
+    setNetwork: (network) => set({
+        network: network
+    })
+}));

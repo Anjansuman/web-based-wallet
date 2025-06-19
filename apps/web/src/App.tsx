@@ -36,7 +36,6 @@ function App() {
   }
 
   if(stage === "unlock") {
-    return <Dashboard />
     return <UnlockWallet onUnlock={() => setStage("dashboard")} />
   }
 
