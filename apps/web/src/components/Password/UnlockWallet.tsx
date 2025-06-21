@@ -4,9 +4,9 @@ import { useState } from "react";
 import { usePopUp } from "../../context/PopUpPanelContext";
 import { useEffect } from "react";
 import { useRef } from "react";
-import { useAccount, useMnemonic } from "../../context/zustand";
+import { useAccount } from "../../context/Zustand";
 import type { Account, AccountType2 } from "../../types/AccountType";
-import { decryptMnemonic, decryptString, PKBDF2 } from "../../utils/crypto";
+import { decryptString, PKBDF2 } from "../../utils/crypto";
 
 interface UnlockWalletProps {
     onUnlock: () => void
@@ -20,7 +20,6 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
     const inputRef = useRef<HTMLInputElement>(null);
 
     const { showPanel } = usePopUp();
-    const { setMnemonic } = useMnemonic();
     const { setAccounts } = useAccount();
 
     useEffect(() => {
@@ -43,9 +42,11 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
 
                 const key = PKBDF2(password, salt); // was logging keys
 
-                console.log("key: ", key);
+                // console.log("key: ", key);
 
-                const decryptedSeed = decryptMnemonic(ciphertext, key, iv).toString();
+                // no need to decrypt the seed while unlocking
+
+                // const decryptedSeed = decryptMnemonic(ciphertext, key, iv).toString();
 
                 // if (!decryptedSeed) {
                 //     alert("unable to decrypt seed");
@@ -54,10 +55,10 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
                 // }
                 setError(false);
 
-                console.log("seed: ", decryptedSeed);
+                // console.log("seed: ", decryptedSeed);
 
                 // store the decryptedSeed key in memory, use zustand or anything
-                setMnemonic(decryptedSeed);
+                // setMnemonic(decryptedSeed);
 
                 chrome.storage.local.get("accounts", (data) => {
                     const accounts: AccountType2[] = data.accounts;

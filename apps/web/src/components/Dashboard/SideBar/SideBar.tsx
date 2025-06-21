@@ -1,5 +1,5 @@
 import { IconArrowLeft, IconCircleCheckFilled, IconCopy } from "@tabler/icons-react";
-import { useAccount } from "../../../context/zustand";
+import { useAccount } from "../../../context/Zustand";
 import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
 import { usePopUp } from "../../../context/PopUpPanelContext";

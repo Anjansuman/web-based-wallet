@@ -1,11 +1,6 @@
 import { create } from "zustand";
-import type { Account } from "../types/AccountType";
+import type { MnemonicStore, AccountStore, CurrentValues } from "./ZustandTypes";
 
-interface MnemonicStore {
-    mnemonic: string,
-    setMnemonic: (mnemonic: string) => void,
-    removeMnemonic: () => void
-}
 
 export const useMnemonic = create<MnemonicStore>((set) => ({
     mnemonic: "",
@@ -16,14 +11,6 @@ export const useMnemonic = create<MnemonicStore>((set) => ({
         mnemonic: ""
     })
 }));
-
-interface AccountStore {
-    accounts: Account[],
-    setAccounts: (accounts: Account[]) => void,
-    removeAccounts: () => void,
-    addAccount: (account: Account) => void,
-    deleteAccount: (publicKey: string) => void
-}
 
 export const useAccount = create<AccountStore>((set) => ({
     accounts: [],
@@ -41,14 +28,13 @@ export const useAccount = create<AccountStore>((set) => ({
     }))
 }));
 
-interface Network {
-    network: string,
-    setNetwork: (network: string) => void
-}
-
-export const useNetwork = create<Network>((set) => ({
+export const useCurrent = create<CurrentValues>((set) => ({
     network: "",
+    account: null,
     setNetwork: (network) => set({
         network: network
+    }),
+    setAccount: (account) => set({
+        account: account
     })
 }));

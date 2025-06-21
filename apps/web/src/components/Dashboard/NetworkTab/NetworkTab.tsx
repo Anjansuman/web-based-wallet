@@ -1,6 +1,7 @@
 import { IconInfoSquareRounded, IconPlus, IconX } from "@tabler/icons-react";
 import NetworkRPC from "../../../utils/rpcURLs";
-import { useNetwork } from "../../../context/zustand";
+import { useCurrent } from "../../../context/Zustand";
+import { usePopUp } from "../../../context/PopUpPanelContext";
 
 interface NetworkTabProps {
     close: () => void
@@ -8,10 +9,17 @@ interface NetworkTabProps {
 
 export default function NetworkTab({ close }: NetworkTabProps) {
 
-    const { setNetwork } = useNetwork();
+    const { setNetwork } = useCurrent();
+    const { showPanel } = usePopUp();
 
     const networkHandler = (network: string) => {
-        setNetwork(NetworkRPC.get(network));
+
+        const rpc = NetworkRPC.get(network);
+        if(!rpc) {
+            showPanel("unable to access RPC url of: " + network, "error");
+            return;
+        }
+        setNetwork(rpc);
     }
 
     return <div className="h-screen w-full absolute z-50 top-0 left-0 backdrop-blur-[1px] flex justify-start items-center p-2">
@@ -29,7 +37,7 @@ export default function NetworkTab({ close }: NetworkTabProps) {
                 {
                     ["Ethereum Mainnet", "Sepolia Testnet"].map((network, index) => (
                         <div
-                            className="w-full flex justify-between items-center rounded-md py-2 bg-black hover:bg-[#191919] transition-colors duration-200 ease-in-out "
+                            className="w-full flex justify-between items-center rounded-md px-4 py-2 bg-black hover:bg-[#191919] transition-colors duration-200 ease-in-out "
                             key={index}
                             onClick={() => networkHandler(network)}
                         >
