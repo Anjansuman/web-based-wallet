@@ -15,3 +15,8 @@ export interface Account {
     privateKey: string,
     publicKey: string
 }
+
+export interface KeyPair {
+    privateKey: string,
+    publicKey: string
+}

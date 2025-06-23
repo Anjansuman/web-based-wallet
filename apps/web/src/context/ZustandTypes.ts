@@ -20,3 +20,10 @@ export interface CurrentValues {
     setNetwork: (network: string) => void,
     setAccount: (account: Account) => void
 }
+
+export type Pages = "loading" | "import" | "setPassword" | "unlock" | "dashboard";
+
+export interface PageStore {
+    page: Pages,
+    setPage: (page: Pages) => void
+}

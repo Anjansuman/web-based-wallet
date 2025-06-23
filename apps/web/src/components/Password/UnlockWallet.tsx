@@ -4,9 +4,11 @@ import { useState } from "react";
 import { usePopUp } from "../../context/PopUpPanelContext";
 import { useEffect } from "react";
 import { useRef } from "react";
-import { useAccount } from "../../context/Zustand";
-import type { Account, AccountType2 } from "../../types/AccountType";
-import { decryptString, PKBDF2 } from "../../utils/crypto";
+// import { useAccount } from "../../context/Zustand";
+// import type { Account, AccountType2 } from "../../types/AccountType";
+// import { decryptString, PKBDF2 } from "../../utils/crypto";
+import { useHashed } from "../../context/HashedAtom";
+import { Hashed } from "../../utils/hashed";
 
 interface UnlockWalletProps {
     onUnlock: () => void
@@ -20,7 +22,8 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
     const inputRef = useRef<HTMLInputElement>(null);
 
     const { showPanel } = usePopUp();
-    const { setAccounts } = useAccount();
+    // const { setAccounts } = useAccount();
+    const { setHashed } = useHashed();
 
     useEffect(() => {
         inputRef.current?.focus();
@@ -34,61 +37,30 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
             chrome.storage.local.get("vault", (data) => {
                 const { ciphertext, salt, iv } = data.vault;
 
+                // setting the class
+                const hashedClass = new Hashed(salt, iv, password);
+                setHashed(hashedClass);
+
+                const unlockWallet: boolean = hashedClass.unlockWallet(ciphertext);
+
+                if (!unlockWallet) {
+                    setError(true);
+                    return;
+                }
+                setError(false);
+
+
                 console.log("ciphertext: ", ciphertext);
                 console.log("salt: ", salt);
                 console.log("iv: ", iv);
 
                 console.log(password);
 
-                const key = PKBDF2(password, salt); // was logging keys
-
-                // console.log("key: ", key);
-
-                // no need to decrypt the seed while unlocking
-
-                // const decryptedSeed = decryptMnemonic(ciphertext, key, iv).toString();
-
-                // if (!decryptedSeed) {
-                //     alert("unable to decrypt seed");
-                //     setError(true);
-                //     return;
-                // }
-                setError(false);
-
-                // console.log("seed: ", decryptedSeed);
-
-                // store the decryptedSeed key in memory, use zustand or anything
-                // setMnemonic(decryptedSeed);
-
-                chrome.storage.local.get("accounts", (data) => {
-                    const accounts: AccountType2[] = data.accounts;
-
-                    console.log("All accounts: ", accounts);
-
-                    const decryptedAccounts = accounts.map((acc) => {
-                        const account = decryptString(acc.account, key, iv);
-                        console.log(account);
-                        return JSON.parse(account);
-                    });
-
-                    console.log("decrypted accounts: ", decryptedAccounts);
-
-                    const allAccounts: Account[] = decryptedAccounts.map((acc, i) => ({
-                        name: accounts[i].name,
-                        privateKey: acc.privateKey,
-                        publicKey: acc.publicKey,
-                    }));
-
-                    console.log("all accounts: ", allAccounts);
-
-                    setAccounts(allAccounts);
-                    onUnlock();
-
-                });
+                hashedClass.fetchChromeData("accounts");
+                onUnlock();
 
             });
 
-            // if (!keyAndIv) throw new Error("Decoding failed!");
         } catch (error) {
             console.log(error);
             showPanel("Error occured while entering password", "error");

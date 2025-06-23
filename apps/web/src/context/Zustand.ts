@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { MnemonicStore, AccountStore, CurrentValues } from "./ZustandTypes";
+import type { MnemonicStore, AccountStore, CurrentValues, PageStore } from "./ZustandTypes";
 
 
 export const useMnemonic = create<MnemonicStore>((set) => ({
@@ -36,5 +36,12 @@ export const useCurrent = create<CurrentValues>((set) => ({
     }),
     setAccount: (account) => set({
         account: account
+    })
+}));
+
+export const usePage = create<PageStore>((set) => ({
+    page: "loading",
+    setPage: (page) => set({
+        page: page
     })
 }));

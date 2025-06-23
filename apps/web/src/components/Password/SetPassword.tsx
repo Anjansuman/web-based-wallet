@@ -1,15 +1,15 @@
 import { useState, useRef, useEffect } from "react";
-import { Wallet } from "@ethereumjs/wallet";
-import { HDKey } from "@scure/bip32";
+// import { Wallet } from "@ethereumjs/wallet";
+// import { HDKey } from "@scure/bip32";
 
 
 import image from "../../../public/images/logo.png";
 import Button from "../ui/Button";
 import { usePopUp } from "../../context/PopUpPanelContext";
 import { IconEye, IconEyeOff } from "@tabler/icons-react";
-import type { AccountType2 } from "../../types/AccountType";
-import { encryptMnemonic, encryptString, PKBDF2, randomWordArray, toHex } from "../../utils/crypto";
-import { mnemonicToSeedSync } from "@scure/bip39";
+// import type { AccountType2 } from "../../types/AccountType";
+import { Hashed } from "../../utils/hashed";
+import { useHashed } from "../../context/HashedAtom";
 
 
 interface setPasswordProps {
@@ -26,6 +26,7 @@ export default function SetPassword({ mnemonic, onComplete }: setPasswordProps) 
     const inputRef = useRef<HTMLInputElement>(null);
 
     const { showPanel } = usePopUp();
+    const { setHashed } = useHashed();
 
     useEffect(() => {
         inputRef.current?.focus();
@@ -42,54 +43,20 @@ const handleEncrypt = () => {
 
         // Let the state update & re-render happen first
         setTimeout(() => {
-            const salt = randomWordArray(16).toString();
-            const key = PKBDF2(password1, salt);
-            const iv = randomWordArray(16).toString();
-            const encrypted = encryptMnemonic(mnemonic, key, iv).toString();
 
-            const vault = {
-                ciphertext: encrypted,
-                salt,
-                iv
-            };
-
-            console.log("password: ", password1);
-            console.log("salt: ", salt);
-            console.log("key: ", key);
-            console.log("iv: ", iv);
-
-            const seed = mnemonicToSeedSync(mnemonic);
-            const path = `m/44'/60'/0'/0/0`;
-            const hdNode = HDKey.fromMasterSeed(seed);
-            const child = hdNode.derive(path);
-
-            if (!child.privateKey) {
-                throw new Error("child doesn't contain private key");
+            const hashedClass = new Hashed();
+            setHashed(hashedClass);
+            
+            const isPasswordSet: boolean = hashedClass.setWalletPassword(password1, mnemonic);
+            
+            if(!isPasswordSet) {
+                setLoading(false);
+                return;
             }
 
-            const wallet = Wallet.fromPrivateKey(child.privateKey);
-            const privateKey = toHex(wallet.getPrivateKey());
-            const publicKey = toHex(wallet.getPublicKey());
+            setLoading(false);
+            onComplete();
 
-            const jsonString = JSON.stringify({
-                privateKey: "0x" + privateKey,
-                publicKey: "0x" + publicKey
-            });
-
-            const hashAccount = encryptString(jsonString, key, iv);
-
-            console.log("encrypt string: ", hashAccount);
-
-            const accounts: AccountType2[] = [{
-                name: "account 1",
-                account: hashAccount
-            }];
-
-            chrome.storage.local.set({ vault });
-            chrome.storage.local.set({ accounts }, () => {
-                setLoading(false);
-                onComplete();
-            });
         }, 0);
 
     } catch (error) {
