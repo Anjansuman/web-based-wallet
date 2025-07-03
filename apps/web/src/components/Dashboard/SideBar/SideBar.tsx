@@ -1,15 +1,17 @@
 import { IconArrowLeft, IconCircleCheckFilled, IconCopy } from "@tabler/icons-react";
-import { useAccount } from "../../../context/Zustand";
 import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
 import { usePopUp } from "../../../context/PopUpPanelContext";
+import { useHashed } from "../../../context/HashedAtom";
 
 interface SideBarProps {
     close: () => void;
 }
 
 export default function SideBar({ close }: SideBarProps) {
-    const { accounts } = useAccount();
+
+    const { hashed } = useHashed();
+
     const barRef = useRef<HTMLDivElement>(null);
     const popupRef = useRef<HTMLDivElement>(null);
 
@@ -70,6 +72,8 @@ export default function SideBar({ close }: SideBarProps) {
         }
     }, []);
 
+    if(hashed === null || hashed?.getAccounts === null) return null;
+
     return (
         <div className="h-full w-full absolute z-50 top-0 left-0 backdrop-blur-[1px] flex justify-start items-center p-2">
             <div
@@ -82,7 +86,7 @@ export default function SideBar({ close }: SideBarProps) {
                 >
                     <IconArrowLeft className="hover:text-black" />
                 </div>
-                {accounts.map((acc, index) => (
+                {hashed.getAccounts().map((acc, index) => (
                     <div
                         key={index}
                         className="flex flex-col justify-center items-center cursor-pointer"

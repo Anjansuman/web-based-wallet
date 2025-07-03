@@ -2,7 +2,6 @@ import crypto from "crypto-js";
 import { usePopUp } from "../context/PopUpPanelContext";
 import type { Account, AccountType2, KeyPair } from "../types/AccountType";
 import { Wallet } from "@ethereumjs/wallet";
-import { useHashed } from "../context/HashedAtom";
 import { mnemonicToSeedSync } from "@scure/bip39";
 import type { NetworkType } from "../types/NetworkType";
 import { HDKey } from "@scure/bip32";
@@ -17,7 +16,7 @@ export class Hashed {
 
     private password: string = "";
 
-    private accounts: Account[] | null = null;
+    private accounts: Account[] = [];
 
     private currentSeedAccount: number = 0;
 
@@ -121,7 +120,7 @@ export class Hashed {
 
     // <------------------ ACCOUNTS ------------------>
 
-    private fetchAndDecryptAccounts(): Promise<Account[]> | void {
+    private fetchAndDecryptAccounts(): Promise<Account[]> | null {
 
         try {
 
@@ -142,6 +141,7 @@ export class Hashed {
                         }));
 
                         this.accounts = allAccounts;
+                        console.log(this.accounts);
 
                         resolve(allAccounts);
 
@@ -152,8 +152,9 @@ export class Hashed {
             });
 
         } catch (error) {
+            console.log(error);
             this.showPanel("Error occured while entering password", "error");
-            return;
+            return null;
         }
     }
 
@@ -265,13 +266,7 @@ export class Hashed {
 
     }
 
-    public getAccounts(): Account[] | void {
-
-        if (!this.accounts) {
-            this.showPanel("Unable to fetch accounts", "error");
-            return;
-        }
-
+    public getAccounts(): Account[] {
         return this.accounts;
     }
 
@@ -291,11 +286,11 @@ export class Hashed {
 
     // <------------------ MNEMONICS ------------------>
 
-    private fetchAndDecryptSeedPhrase(password: string): Promise<string> | void {
+    private fetchAndDecryptSeedPhrase(password: string): Promise<string> | null {
 
         if (this.password! == password) {
             this.showPanel("Wrong passwrd", "error");
-            return;
+            return null;
         }
 
         try {
@@ -304,12 +299,16 @@ export class Hashed {
                 try {
                     chrome.storage.local.get("vault", (data) => {
 
-                        const { ciphertext } = data.vault;
+                        const { ciphertext, salt, iv } = data.vault;
+
+                        if (!this.salt) this.salt = salt;
+                        if (!this.iv) this.iv = iv;
 
                         // const key = this.PKBDF2(password);
-                        const decryptedSeed = this.decryptMnemonic(ciphertext).toString();
+                        const decryptedSeed = this.decryptMnemonic(ciphertext);
 
                         this.mnemonic = decryptedSeed;
+                        console.log(this.mnemonic);
                         resolve(decryptedSeed);
                     });
                 } catch (error) {
@@ -319,7 +318,7 @@ export class Hashed {
 
         } catch (error) {
             this.showPanel("Failed to show seed phrase", "error");
-            return;
+            return null;
         }
     }
 
@@ -367,21 +366,33 @@ export class Hashed {
 
     // <------------------ WALLET ------------------>
 
-    public unlockWallet(ciphertext: crypto.lib.CipherParams): boolean { // this will be used to unlock wallet
+    public async unlockWallet(password?: string): Promise<boolean> { // this will be used to unlock wallet
 
         // password should be set at initialization
-        if (!this.password) {
-            this.emptyHashedState();
-            return false;
+        if (password) {
+            this.key = this.PKBDF2(password);
+            // console.log("didn't found password");
+            await this.fetchAndDecryptSeedPhrase(password);
+            // this.emptyHashedState();
+            // return false;
+        } else if (this.password) {
+            this.key = this.PKBDF2(this.password);
+            await this.fetchAndDecryptSeedPhrase(this.password);
         }
 
-        this.key = this.PKBDF2(this.password);
-        this.mnemonic = this.decryptMnemonic(ciphertext);
+        // if (!this.mnemonic) {
+        //     console.log("didn't found mnemonic");
+        //     // this.emptyHashedState();
+        //     return false;
+        // }
 
-        if (!this.mnemonic) {
-            this.emptyHashedState();
-            return false;
-        }
+        await this.fetchAndDecryptAccounts();
+
+        // if (!this.accounts) {
+        //     console.log("didn't found accounts");
+        //     // this.emptyHashedState();
+        //     return false;
+        // }
 
         return true;
     }
@@ -398,6 +409,11 @@ export class Hashed {
             this.key = this.PKBDF2(password);
             this.iv = this.randomWordArray(16).toString();
 
+            console.log("mnemonic: ", this.mnemonic);
+            console.log("salt: ", this.salt);
+            console.log("key: ", this.key);
+            console.log("iv: ", this.iv);
+
             const ciphertext = this.encryptMnemonic();
 
             const vault = {
@@ -410,13 +426,16 @@ export class Hashed {
 
             const keypair = this.generateKeyPair(seed);
 
-            if(!keypair) {
+            if (!keypair) {
                 this.showPanel("Key-pair generation failed!", "error");
                 this.currentSeedAccount--;
                 return false;
             }
 
             const { privateKey, publicKey } = keypair;
+
+            console.log("privateKey: ", privateKey);
+            console.log("publicKey: ", publicKey);
 
             const str = JSON.stringify({
                 privateKey: privateKey.startsWith("0x") ? privateKey : ("0x" + privateKey),
@@ -437,13 +456,11 @@ export class Hashed {
             return true;
 
         } catch (error) {
-
+            this.showPanel("Setting password failed", "error");
+            return false;
         }
     }
 
-    private getPath(): string {
-        return `m/44'/60'/0'/0/${this.currentSeedAccount}`;
-    }
 
     // <------------------ NETWORK ------------------>
 
@@ -478,8 +495,7 @@ export class Hashed {
     }
 
     public emptyHashedState(): void { // use it when required only
-        const { removeHashed } = useHashed();
-        removeHashed();
+        // EmptyHashedState();
     }
 
     public changeWalletPassword() {
@@ -512,4 +528,7 @@ export class Hashed {
 
     }
 
+    private getPath(): string {
+        return `m/44'/60'/0'/0/${this.currentSeedAccount}`;
+    }
 }

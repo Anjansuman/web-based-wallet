@@ -10,7 +10,6 @@ export default function Dashboard() {
 
     const [sideBar, setSideBar] = useState<boolean>(false);
 
-
     return <div className="h-full w-full flex flex-col justify-start ">
         <div className="h-full flex-grow ">
             <NavBar sideBar={() => setSideBar(true)} />

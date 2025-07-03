@@ -29,19 +29,20 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
         inputRef.current?.focus();
     }, []);
 
-    const handlePassword = () => {
+    const handlePassword = async () => {
         try {
 
             if (!password) return;
 
-            chrome.storage.local.get("vault", (data) => {
-                const { ciphertext, salt, iv } = data.vault;
+                // const { ciphertext, salt, iv } = data.vault;
 
-                // setting the class
-                const hashedClass = new Hashed(salt, iv, password);
+                console.log(password);
+
+                // setting up the class
+                const hashedClass = new Hashed(password);
                 setHashed(hashedClass);
 
-                const unlockWallet: boolean = hashedClass.unlockWallet(ciphertext);
+                const unlockWallet: boolean = await hashedClass.unlockWallet(password);
 
                 if (!unlockWallet) {
                     setError(true);
@@ -50,16 +51,14 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
                 setError(false);
 
 
-                console.log("ciphertext: ", ciphertext);
-                console.log("salt: ", salt);
-                console.log("iv: ", iv);
+                // console.log("ciphertext: ", ciphertext);
+                // console.log("salt: ", salt);
+                // console.log("iv: ", iv);
 
                 console.log(password);
 
                 hashedClass.fetchChromeData("accounts");
                 onUnlock();
-
-            });
 
         } catch (error) {
             console.log(error);
