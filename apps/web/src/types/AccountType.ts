@@ -6,8 +6,8 @@ export interface AccountType {
 }
 
 export interface AccountType2 {
-    name: string,
-    account: string
+    account: string,
+    name: string
 }
 
 export interface Account {

@@ -1,14 +1,17 @@
-import { IconArrowLeft, IconCircleCheckFilled, IconCopy } from "@tabler/icons-react";
+import { IconArrowLeft, IconCircleCheckFilled, IconCopy, IconPencil, IconPlus, IconSettings } from "@tabler/icons-react";
 import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
-import { usePopUp } from "../../../context/PopUpPanelContext";
-import { useHashed } from "../../../context/HashedAtom";
+import { usePopUp } from "../../../../context/PopUpPanelContext";
+import { useHashed } from "../../../../context/HashedAtom";
 
 interface SideBarProps {
-    close: () => void;
+    close: () => void,
+    addAccount: () => void,
+    editAccounts: () => void,
+    settings: () => void
 }
 
-export default function SideBar({ close }: SideBarProps) {
+export default function SideBar({ close, addAccount, editAccounts, settings }: SideBarProps) {
 
     const { hashed } = useHashed();
 
@@ -67,38 +70,75 @@ export default function SideBar({ close }: SideBarProps) {
         if (barRef.current) {
             gsap.from(barRef.current, {
                 x: -100,
-                duration: 0.2
+                duration: 0.2,
+                ease: "power2.inOut"
             });
         }
     }, []);
 
-    if(hashed === null || hashed?.getAccounts === null) return null;
+    const handleClose = () => {
+        if (!barRef.current) return;
+
+        gsap.to(barRef.current, {
+            x: -100,
+            duration: 0.2,
+            ease: "power2.inOut",
+            onComplete: () => {
+                close()
+            }
+        });
+    }
+
+    if (hashed === null || hashed?.getAccounts === null) return null;
 
     return (
-        <div className="h-full w-full absolute z-50 top-0 left-0 backdrop-blur-[1px] flex justify-start items-center p-2">
+        <div className="h-full w-full absolute z-40 top-0 left-0 backdrop-blur-[1px] flex justify-start items-center py-2 px-2 ">
             <div
                 ref={barRef}
-                className="h-full w-16 bg-black rounded-md p-2 flex flex-col justify-start items-center gap-y-3"
+                className="h-full w-16 bg-black rounded-md py-4 px-2 flex flex-col justify-between items-center "
             >
-                <div
-                    className="hover:bg-white transition-colors p-1 rounded-sm cursor-pointer"
-                    onClick={close}
-                >
-                    <IconArrowLeft className="hover:text-black" />
-                </div>
-                {hashed.getAccounts().map((acc, index) => (
+                <div className="flex flex-col justify-start items-center gap-y-3 ">
                     <div
-                        key={index}
-                        className="flex flex-col justify-center items-center cursor-pointer"
-                        onMouseEnter={(e) => handleHover(e, acc.name, acc.publicKey)}
-                        onMouseLeave={handleMouseLeave}
+                        className="hover:bg-white transition-colors p-1 rounded-sm cursor-pointer"
+                        onClick={handleClose}
                     >
-                        <div className="h-10 w-10 rounded-full bg-white flex justify-center items-center text-center">
-                            {acc.name.charAt(0)}
-                        </div>
-                        <div className="text-[10px]">{acc.name}</div>
+                        <IconArrowLeft className="hover:text-black" />
                     </div>
-                ))}
+                    {hashed.getAccounts().map((acc, index) => (
+                        <div
+                            key={index}
+                            className="flex flex-col justify-center items-center cursor-pointer"
+                            onMouseEnter={(e) => handleHover(e, acc.name, acc.publicKey)}
+                            onMouseLeave={handleMouseLeave}
+                        >
+                            <div className="h-10 w-10 rounded-full bg-white flex justify-center items-center text-center">
+                                {acc.name.charAt(0)}
+                            </div>
+                            <div className="text-[10px]">{acc.name}</div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="flex flex-col justify-start items-center gap-y-3 pt-3 border-t border-neutral-600 ">
+                    <div
+                        className="hover:bg-white transition-colors p-1 rounded-sm cursor-pointer"
+                        onClick={addAccount}
+                    >
+                        <IconPlus className="hover:text-black" />
+                    </div>
+                    <div
+                        className="hover:bg-white transition-colors p-1 rounded-sm cursor-pointer"
+                        onClick={editAccounts}
+                    >
+                        <IconPencil className="hover:text-black" />
+                    </div>
+                    <div
+                        className="hover:bg-white transition-colors p-1 rounded-sm cursor-pointer"
+                        onClick={settings}
+                    >
+                        <IconSettings className="hover:text-black" />
+                    </div>
+                </div>
             </div>
 
             {accountData && (

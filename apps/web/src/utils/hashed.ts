@@ -1,10 +1,12 @@
 import crypto from "crypto-js";
-import { usePopUp } from "../context/PopUpPanelContext";
+// import { usePopUp } from "../context/PopUpPanelContext";
 import type { Account, AccountType2, KeyPair } from "../types/AccountType";
 import { Wallet } from "@ethereumjs/wallet";
 import { mnemonicToSeedSync } from "@scure/bip39";
 import type { NetworkType } from "../types/NetworkType";
 import { HDKey } from "@scure/bip32";
+import { usePopUp } from "../context/PopUpPanelContext";
+import axios from "axios";
 
 export class Hashed {
 
@@ -22,6 +24,7 @@ export class Hashed {
 
     private selectedAccount: Account | null = null;
     private selectedNetwork: NetworkType | null = null;
+    private selectedAccountBalance: number = 0;
 
     constructor(salt?: string, iv?: string, password?: string, key?: crypto.lib.WordArray, mnemonic?: string) {
         this.salt = salt!;
@@ -60,6 +63,9 @@ export class Hashed {
 
     public decryptMnemonic(cipherText: crypto.lib.CipherParams): string {
 
+        console.log("key: ", this.key);
+        console.log("iv: ", this.iv);
+
         if (!this.key || !this.iv) {
             this.showPanel("Unwanted error while encrypting seed phrase / mnemonic", "error");
             return "";
@@ -91,11 +97,13 @@ export class Hashed {
             return "";
         }
 
-        return crypto.AES.decrypt(cipherText, this.key, {
+        const str = crypto.AES.decrypt(cipherText, this.key, {
             iv: crypto.enc.Hex.parse(this.iv),
             mode: crypto.mode.CBC,
             padding: crypto.pad.Pkcs7
         }).toString(crypto.enc.Utf8);
+
+        return str;
     }
 
     // <------------------ TYPE CONVERSION ------------------>
@@ -131,7 +139,9 @@ export class Hashed {
 
                         const decryptedAccounts = accounts.map((acc) => {
                             const account = this.decryptString(acc.account);
-                            return JSON.parse(account);
+
+                            const parsed = JSON.parse(account);
+                            return parsed;
                         });
 
                         const allAccounts: Account[] = decryptedAccounts.map((acc, i) => ({
@@ -140,8 +150,9 @@ export class Hashed {
                             publicKey: acc.publicKey
                         }));
 
+
                         this.accounts = allAccounts;
-                        console.log(this.accounts);
+                        console.log("this.accounts: ", this.accounts);
 
                         resolve(allAccounts);
 
@@ -280,15 +291,15 @@ export class Hashed {
         this.selectedAccount = this.accounts[index];
     }
 
-    public getSelectedAccount(): Account | null {
-        return this.selectedAccount;
+    public getSelectedAccount(): Account {
+        return this.selectedAccount || this.accounts[0];
     }
 
     // <------------------ MNEMONICS ------------------>
 
     private fetchAndDecryptSeedPhrase(password: string): Promise<string> | null {
 
-        if (this.password! == password) {
+        if (this.password !== password) {
             this.showPanel("Wrong passwrd", "error");
             return null;
         }
@@ -301,14 +312,17 @@ export class Hashed {
 
                         const { ciphertext, salt, iv } = data.vault;
 
-                        if (!this.salt) this.salt = salt;
-                        if (!this.iv) this.iv = iv;
+                        // if (!this.salt) this.salt = salt;
+                        // if (!this.iv) this.iv = iv;
 
-                        // const key = this.PKBDF2(password);
+                        this.iv = iv;
+                        this.salt = salt;
+
+                        this.key = this.PKBDF2(password);
                         const decryptedSeed = this.decryptMnemonic(ciphertext);
 
                         this.mnemonic = decryptedSeed;
-                        console.log(this.mnemonic);
+
                         resolve(decryptedSeed);
                     });
                 } catch (error) {
@@ -366,33 +380,17 @@ export class Hashed {
 
     // <------------------ WALLET ------------------>
 
-    public async unlockWallet(password?: string): Promise<boolean> { // this will be used to unlock wallet
+    public async unlockWallet(password: string): Promise<boolean> { // this will be used to unlock wallet
 
-        // password should be set at initialization
-        if (password) {
-            this.key = this.PKBDF2(password);
-            // console.log("didn't found password");
-            await this.fetchAndDecryptSeedPhrase(password);
-            // this.emptyHashedState();
-            // return false;
-        } else if (this.password) {
-            this.key = this.PKBDF2(this.password);
-            await this.fetchAndDecryptSeedPhrase(this.password);
-        }
+        if (!password) return false;
 
-        // if (!this.mnemonic) {
-        //     console.log("didn't found mnemonic");
-        //     // this.emptyHashedState();
-        //     return false;
-        // }
+        this.password = password;
 
-        await this.fetchAndDecryptAccounts();
+        this.mnemonic = await this.fetchAndDecryptSeedPhrase(password)!;
 
-        // if (!this.accounts) {
-        //     console.log("didn't found accounts");
-        //     // this.emptyHashedState();
-        //     return false;
-        // }
+        this.accounts = await this.fetchAndDecryptAccounts()!;
+
+        this.setSelectedAccount(0);
 
         return true;
     }
@@ -409,6 +407,7 @@ export class Hashed {
             this.key = this.PKBDF2(password);
             this.iv = this.randomWordArray(16).toString();
 
+            console.log("password: ", password);
             console.log("mnemonic: ", this.mnemonic);
             console.log("salt: ", this.salt);
             console.log("key: ", this.key);
@@ -419,7 +418,7 @@ export class Hashed {
             const vault = {
                 ciphertext: ciphertext,
                 salt: this.salt,
-                iv: this.salt
+                iv: this.iv
             };
 
             const seed = this.mnemonicToSeedSync(mnemonic);
@@ -441,6 +440,8 @@ export class Hashed {
                 privateKey: privateKey.startsWith("0x") ? privateKey : ("0x" + privateKey),
                 publicKey: publicKey.startsWith("0x") ? publicKey : ("0x" + publicKey)
             });
+
+            console.log(str);
 
             const accHash = this.encryptString(str);
 
@@ -492,6 +493,8 @@ export class Hashed {
     public showPanel(message: string, type: "success" | "error"): void {
         const { showPanel } = usePopUp();
         showPanel(message, type);
+        // console.log("type: ", type);
+        // console.log("message: ", message);
     }
 
     public emptyHashedState(): void { // use it when required only
@@ -531,4 +534,36 @@ export class Hashed {
     private getPath(): string {
         return `m/44'/60'/0'/0/${this.currentSeedAccount}`;
     }
+
+    public async setBalanceOfCurrentAccount() {
+
+        const address = this.selectedAccount;
+
+        const data = {
+            jsonrpc: "2.0",
+            method: "eth_getBalance",
+            params: [address, "latest"],
+            id: 1
+        };
+
+        const res = await axios.post("https://cloudflare-eth.com", data, {
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+
+        const weiHex = await res.data.result;
+        const wei = BigInt(weiHex);
+        const eth = Number(wei) / 1e18;
+
+        this.selectedAccountBalance = eth;
+
+        return eth;
+
+    }
+
+    public getBalanceofCurrentAccount() {
+        return this.selectedAccountBalance;
+    }
+
 }

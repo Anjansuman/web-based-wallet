@@ -1,7 +1,7 @@
 import { IconInfoSquareRounded, IconPlus, IconX } from "@tabler/icons-react";
-import NetworkRPC from "../../../utils/rpcURLs";
-import { useCurrent } from "../../../context/Zustand";
-import { usePopUp } from "../../../context/PopUpPanelContext";
+import NetworkRPC from "../../../../utils/rpcURLs";
+import { useCurrent } from "../../../../context/Zustand";
+import { usePopUp } from "../../../../context/PopUpPanelContext";
 
 interface NetworkTabProps {
     close: () => void

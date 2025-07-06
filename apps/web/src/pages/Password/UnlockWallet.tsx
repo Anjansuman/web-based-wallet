@@ -1,4 +1,4 @@
-import Button from "../ui/Button";
+import Button from "../../components/ui/Button";
 import image from "../../../public/images/logo.png";
 import { useState } from "react";
 import { usePopUp } from "../../context/PopUpPanelContext";
@@ -23,7 +23,7 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
 
     const { showPanel } = usePopUp();
     // const { setAccounts } = useAccount();
-    const { setHashed } = useHashed();
+    const { hashed, setHashed } = useHashed();
 
     useEffect(() => {
         inputRef.current?.focus();
@@ -34,13 +34,10 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
 
             if (!password) return;
 
-                // const { ciphertext, salt, iv } = data.vault;
-
-                console.log(password);
-
                 // setting up the class
                 const hashedClass = new Hashed(password);
                 setHashed(hashedClass);
+                console.log(hashed);
 
                 const unlockWallet: boolean = await hashedClass.unlockWallet(password);
 
@@ -50,14 +47,10 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
                 }
                 setError(false);
 
-
-                // console.log("ciphertext: ", ciphertext);
-                // console.log("salt: ", salt);
-                // console.log("iv: ", iv);
-
                 console.log(password);
 
                 hashedClass.fetchChromeData("accounts");
+                console.log("ek or baar hashed: ", hashed);
                 onUnlock();
 
         } catch (error) {

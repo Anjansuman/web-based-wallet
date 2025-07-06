@@ -3,7 +3,7 @@ import { wordlist } from "@scure/bip39/wordlists/english";
 import { usePopUp } from "../../context/PopUpPanelContext";
 import { useRef } from "react";
 import { validateMnemonic } from "@scure/bip39";
-import Button from "../ui/Button";
+import Button from "../../components/ui/Button";
 import { useEffect } from "react";
 // import { HDKey } from "@scure/bip32";
 // import { Wallet } from "@ethereumjs/wallet";

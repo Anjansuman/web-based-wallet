@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 
 
 import image from "../../../public/images/logo.png";
-import Button from "../ui/Button";
+import Button from "../../components/ui/Button";
 import { usePopUp } from "../../context/PopUpPanelContext";
 import { IconEye, IconEyeOff } from "@tabler/icons-react";
 // import type { AccountType2 } from "../../types/AccountType";

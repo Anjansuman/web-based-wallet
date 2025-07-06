@@ -1,11 +1,11 @@
 /// <reference types="chrome" />
 
 import { useState } from "react";
-import Dashboard from "./components/Dashboard/Dashboard";
+import Dashboard from "./pages/Dashboard/Dashboard";
 import { useEffect } from "react";
-import Seed from "./components/Seed/Seed";
-import SetPassword from "./components/Password/SetPassword";
-import UnlockWallet from "./components/Password/UnlockWallet";
+import Seed from "./pages/Seed/Seed";
+import SetPassword from "./pages/Password/SetPassword";
+import UnlockWallet from "./pages/Password/UnlockWallet";
 
 type Stage = "loading" | "import" | "setPassword" | "unlock" | "dashboard"
 

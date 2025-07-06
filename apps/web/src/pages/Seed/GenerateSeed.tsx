@@ -4,7 +4,7 @@ import { wordlist } from "@scure/bip39/wordlists/english";
 import { IconCircleCheckFilled, IconCopy } from "@tabler/icons-react";
 // import PopUp from "../ui/PopUp";
 import { usePopUp } from "../../context/PopUpPanelContext";
-import Button from "../ui/Button";
+import Button from "../../components/ui/Button";
 
 interface GenerateSeedProps {
     onComplete: (mnemonic: string) => void

@@ -3,7 +3,7 @@ import ImportSeed from "./ImportSeed";
 
 import image from "../../../public/images/logo.png";
 import GenerateSeed from "./GenerateSeed";
-import Button from "../ui/Button";
+import Button from "../../components/ui/Button";
 
 interface SeedProps {
     onComplete: (mnemonic: string) => void
