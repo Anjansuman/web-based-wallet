@@ -1,1 +1,7 @@
-@import "tailwindcss"
+@import "tailwindcss";
+
+.custom-resizer::-webkit-resizer {
+    border-right: 1px solid gray;
+    border-bottom: 1px solid gray;
+    border-radius: 0 0 7px 0;
+}

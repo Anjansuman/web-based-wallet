@@ -21,7 +21,7 @@ export const Receive = ({ close }: ReceiveProps) => {
 
     useEffect(() => {
 
-        if(!panelRef.current) return;
+        if (!panelRef.current) return;
 
         gsap.from(panelRef.current, {
             y: 530,
@@ -32,7 +32,7 @@ export const Receive = ({ close }: ReceiveProps) => {
     }, []);
 
     const onClose = () => {
-        if(!panelRef.current) return;
+        if (!panelRef.current) return;
 
         gsap.to(panelRef.current, {
             y: 530,
@@ -57,7 +57,7 @@ export const Receive = ({ close }: ReceiveProps) => {
 
     return <div className="h-full w-full absolute z-30 top-[70px] left-0 flex justify-start items-start ">
         <div
-            className="w-full h-[530px] bg-neutral-900 flex flex-col justify-around items-center p-3 "
+            className="w-full h-[530px] bg-neutral-900 flex flex-col justify-between items-center p-3 "
             ref={panelRef}
         >
             {
@@ -77,11 +77,13 @@ export const Receive = ({ close }: ReceiveProps) => {
                     Copy
                 </div>
             </div>
-
-            <Button
-                content={"Close"}
-                onClick={onClose}
-            />
+            
+            <div className="w-full p-2 ">
+                <Button
+                    content={"Close"}
+                    onClick={onClose}
+                />
+            </div>
         </div>
     </div>
 }

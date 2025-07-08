@@ -1,11 +1,11 @@
 
 import { useEffect, useRef, useState } from "react";
-import { useHashed } from '../../../context/HashedAtom';
-import Button from '../../../components/ui/Button';
+import { useHashed } from '../../../../context/HashedAtom';
+import Button from '../../../../components/ui/Button';
 import gsap from 'gsap';
-import type { Account } from "../../../types/AccountType";
 import { IconBracketsContain, IconDownload, IconEye, IconPlus } from "@tabler/icons-react";
-import { GrayButton } from "../../../components/ui/GrayButton";
+import { GrayButton } from "../../../../components/ui/GrayButton";
+import { AddNewAccount } from "./AddNewAccount";
 
 
 interface ReceiveProps {
@@ -13,11 +13,13 @@ interface ReceiveProps {
 
 }
 
-export const Settings = ({ close }: ReceiveProps) => {
+export const AddAccount = ({ close }: ReceiveProps) => {
 
     const { hashed } = useHashed();
-    const [accounts, setAccounts] = useState<Account[]>();
     const panelRef = useRef<HTMLDivElement>(null);
+
+
+    const [newAccountPanel, setNewAccountPanel] = useState<"newAccount" | "newRecoveryPhrase" | "importAccount" | "watchAddress" | null>(null);
 
     useEffect(() => {
 
@@ -47,11 +49,15 @@ export const Settings = ({ close }: ReceiveProps) => {
     useEffect(() => {
         if (!hashed) return;
 
-        const allAccounts = hashed.getAccounts();
-        setAccounts(allAccounts);
-        console.log(accounts);
+
     }, [hashed]);
 
+    const handleAddAccountRequest = (index: number) => {
+        if (index === 0) setNewAccountPanel("newAccount");
+        else if (index === 0) setNewAccountPanel("newRecoveryPhrase");
+        else if (index === 0) setNewAccountPanel("importAccount");
+        else if (index === 0) setNewAccountPanel("watchAddress");
+    }
 
     return <div className="h-full w-full absolute z-50 top-[0] left-0 flex justify-start items-start ">
         <div
@@ -63,12 +69,13 @@ export const Settings = ({ close }: ReceiveProps) => {
             </div>
 
             <div className="w-full h-full overflow-x-hidden overflow-y-auto [::-webkit-scrollbar]:hidden [scrollbar-width:none] ">
-                {/* make this a separate component like made for Button.tsx */}
+
                 <div className="w-full h-full flex flex-col justify-start items-center p-2 gap-y-2">
                     {contentArray()?.map((detail, index) => (
                         <GrayButton
                             className={"flex justify-start items-center gap-x-2 "}
                             key={index}
+                            onClick={() => handleAddAccountRequest(index)}
                         >
                             <div className="rounded-full p-2 bg-[#2e2e2e] ">
                                 {detail.logo}
@@ -93,6 +100,12 @@ export const Settings = ({ close }: ReceiveProps) => {
                 />
             </div>
         </div>
+        
+        {newAccountPanel === "newAccount" && <AddNewAccount close={() => setNewAccountPanel(null)} />}
+        {newAccountPanel === "newRecoveryPhrase" && <AddNewAccount close={() => setNewAccountPanel(null)} />}
+        {newAccountPanel === "importAccount" && <AddNewAccount close={() => setNewAccountPanel(null)} />}
+        {newAccountPanel === "watchAddress" && <AddNewAccount close={() => setNewAccountPanel(null)} />}
+        
     </div>
 }
 

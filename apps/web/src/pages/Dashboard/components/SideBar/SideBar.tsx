@@ -1,17 +1,18 @@
 import { IconArrowLeft, IconCircleCheckFilled, IconCopy, IconPencil, IconPlus, IconSettings } from "@tabler/icons-react";
 import gsap from "gsap";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { usePopUp } from "../../../../context/PopUpPanelContext";
 import { useHashed } from "../../../../context/HashedAtom";
 
 interface SideBarProps {
+    ref?: React.Ref<HTMLDivElement>
     close: () => void,
     addAccount: () => void,
     editAccounts: () => void,
     settings: () => void
 }
 
-export default function SideBar({ close, addAccount, editAccounts, settings }: SideBarProps) {
+export default function SideBar({ ref, close, addAccount, editAccounts, settings }: SideBarProps) {
 
     const { hashed } = useHashed();
 
@@ -94,8 +95,8 @@ export default function SideBar({ close, addAccount, editAccounts, settings }: S
     return (
         <div className="h-full w-full absolute z-40 top-0 left-0 backdrop-blur-[1px] flex justify-start items-center py-2 px-2 ">
             <div
-                ref={barRef}
-                className="h-full w-16 bg-black rounded-md py-4 px-2 flex flex-col justify-between items-center "
+                ref={barRef || ref}
+                className="h-full w-16 bg-black rounded-md py-4 px-2 flex flex-col justify-between items-center shadow-md "
             >
                 <div className="flex flex-col justify-start items-center gap-y-3 ">
                     <div

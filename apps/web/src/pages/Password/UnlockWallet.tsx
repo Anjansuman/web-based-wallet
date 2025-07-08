@@ -9,6 +9,7 @@ import { useRef } from "react";
 // import { decryptString, PKBDF2 } from "../../utils/crypto";
 import { useHashed } from "../../context/HashedAtom";
 import { Hashed } from "../../utils/hashed";
+import { Input } from "../../components/ui/Input";
 
 interface UnlockWalletProps {
     onUnlock: () => void
@@ -85,11 +86,18 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
                     </div>
                 }
             </div>
-            <input
+            {/* <input
                 type={"password"}
                 ref={inputRef}
                 placeholder="Password"
                 className={`w-full h-full outline-none focus:outline-none focus:ring-0 text-sm text-white rounded-lg pl-3 py-3 bg-[#1e1e1e] border ${error ? "border-red-500" : "border-transparent"} `}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => handleEnter(e)}
+            /> */}
+            <Input
+                type={"password"}
+                ref={inputRef}
+                placeholder={"Password"}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={(e) => handleEnter(e)}
             />
