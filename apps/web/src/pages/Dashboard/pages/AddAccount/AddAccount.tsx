@@ -6,6 +6,7 @@ import gsap from 'gsap';
 import { IconBracketsContain, IconDownload, IconEye, IconPlus } from "@tabler/icons-react";
 import { GrayButton } from "../../../../components/ui/GrayButton";
 import { AddNewAccount } from "./AddNewAccount";
+import { ImportAccount } from "./ImportAccount";
 
 
 interface ReceiveProps {
@@ -54,9 +55,9 @@ export const AddAccount = ({ close }: ReceiveProps) => {
 
     const handleAddAccountRequest = (index: number) => {
         if (index === 0) setNewAccountPanel("newAccount");
-        else if (index === 0) setNewAccountPanel("newRecoveryPhrase");
-        else if (index === 0) setNewAccountPanel("importAccount");
-        else if (index === 0) setNewAccountPanel("watchAddress");
+        else if (index === 1) setNewAccountPanel("newRecoveryPhrase");
+        else if (index === 2) setNewAccountPanel("importAccount");
+        else if (index === 3) setNewAccountPanel("watchAddress");
     }
 
     return <div className="h-full w-full absolute z-50 top-[0] left-0 flex justify-start items-start ">
@@ -103,7 +104,7 @@ export const AddAccount = ({ close }: ReceiveProps) => {
         
         {newAccountPanel === "newAccount" && <AddNewAccount close={() => setNewAccountPanel(null)} />}
         {newAccountPanel === "newRecoveryPhrase" && <AddNewAccount close={() => setNewAccountPanel(null)} />}
-        {newAccountPanel === "importAccount" && <AddNewAccount close={() => setNewAccountPanel(null)} />}
+        {newAccountPanel === "importAccount" && <ImportAccount close={() => setNewAccountPanel(null)} />}
         {newAccountPanel === "watchAddress" && <AddNewAccount close={() => setNewAccountPanel(null)} />}
         
     </div>

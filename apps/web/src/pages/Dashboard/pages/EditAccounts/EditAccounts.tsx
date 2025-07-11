@@ -1,11 +1,12 @@
 
 import { useEffect, useRef, useState } from "react";
-import { useHashed } from '../../../context/HashedAtom';
-import Button from '../../../components/ui/Button';
+import { useHashed } from '../../../../context/HashedAtom';
+import Button from '../../../../components/ui/Button';
 import gsap from 'gsap';
-import type { Account } from "../../../types/AccountType";
+import type { Account } from "../../../../types/AccountType";
 import { IconDotsVertical } from "@tabler/icons-react";
-import { GrayButton } from "../../../components/ui/GrayButton";
+import { GrayButton } from "../../../../components/ui/GrayButton";
+import { AccountProfile } from "./AccountProfile";
 
 
 interface ReceiveProps {
@@ -18,6 +19,12 @@ export const EditAccounts = ({ close }: ReceiveProps) => {
     const { hashed } = useHashed();
     const [accounts, setAccounts] = useState<Account[]>();
     const panelRef = useRef<HTMLDivElement>(null);
+
+    const [accountProfile, setAccountProfile] = useState<Account | null>(null);
+
+    const handleAccountProfile = (acc: Account) => {
+        setAccountProfile(acc);
+    }
 
     useEffect(() => {
 
@@ -66,7 +73,10 @@ export const EditAccounts = ({ close }: ReceiveProps) => {
                 {/* make this a separate component like made for Button.tsx */}
                 <div className="w-full h-full flex flex-col justify-start items-center p-2 gap-y-2">
                     {accounts?.map((acc, index) => (
-                        <GrayButton key={index}>
+                        <GrayButton
+                            key={index}
+                            onClick={() => handleAccountProfile(acc)}
+                        >
                             <div className="">
                                 {acc.name}
                             </div>
@@ -85,5 +95,11 @@ export const EditAccounts = ({ close }: ReceiveProps) => {
                 />
             </div>
         </div>
+
+        {accountProfile && <AccountProfile
+            close={() => setAccountProfile(null)}
+            data={accountProfile}
+        />}
+
     </div>
 }

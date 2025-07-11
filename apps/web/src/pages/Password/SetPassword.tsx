@@ -1,7 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-// import { Wallet } from "@ethereumjs/wallet";
-// import { HDKey } from "@scure/bip32";
-
 
 import image from "../../../public/images/logo.png";
 import Button from "../../components/ui/Button";
@@ -32,38 +29,43 @@ export default function SetPassword({ mnemonic, onComplete }: setPasswordProps) 
         inputRef.current?.focus();
     }, []);
 
-const handleEncrypt = () => {
-    try {
-        if (password1 !== password2) {
-            showPanel("Password didn't match", "error");
-            return;
-        }
-
-        setLoading(true);
-
-        // Let the state update & re-render happen first
-        setTimeout(() => {
-
-            const hashedClass = new Hashed();
-            setHashed(hashedClass);
-            
-            const isPasswordSet: boolean = hashedClass.setWalletPassword(password1, mnemonic);
-            
-            if(!isPasswordSet) {
-                setLoading(false);
+    const handleEncrypt = () => {
+        try {
+            if (password1 !== password2) {
+                showPanel("Password didn't match", "error");
                 return;
             }
 
+            setLoading(true);
+
+            // Let the state update & re-render happen first
+            const setPass = () => {
+
+                const hashedClass = new Hashed();
+                setHashed(hashedClass);
+
+                console.log("password set called");
+                const isPasswordSet: boolean = hashedClass.setWalletPassword(password1, mnemonic);
+
+                console.log("is password set: ", isPasswordSet);
+
+                if (!isPasswordSet) {
+                    setLoading(false);
+                    return;
+                }
+
+                setLoading(false);
+                onComplete();
+
+            }
+            setPass();
+
+        } catch (error) {
             setLoading(false);
-            onComplete();
-
-        }, 0);
-
-    } catch (error) {
-        setLoading(false);
-        showPanel("Error occured while storing the password", "error");
-    }
-}; 
+            console.log("error: ", error);
+            showPanel("Error occured while storing the password", "error");
+        }
+    };
 
     const handleReEnterPassword = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newPassword2 = e.target.value;

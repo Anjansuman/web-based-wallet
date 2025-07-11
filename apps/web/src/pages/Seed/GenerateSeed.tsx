@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { generateMnemonic } from "@scure/bip39";
-import { wordlist } from "@scure/bip39/wordlists/english";
 import { IconCircleCheckFilled, IconCopy } from "@tabler/icons-react";
-// import PopUp from "../ui/PopUp";
 import { usePopUp } from "../../context/PopUpPanelContext";
 import Button from "../../components/ui/Button";
+import { useHashed } from "../../context/HashedAtom";
+import { Hashed } from "../../utils/hashed";
 
 interface GenerateSeedProps {
     onComplete: (mnemonic: string) => void
@@ -18,16 +17,31 @@ export default function GenerateSeed({ onComplete }: GenerateSeedProps) {
     const [isChecked, setIsChecked] = useState<boolean>(false);
 
     const { showPanel } = usePopUp();
+    const { setHashed } = useHashed();
 
 
     useEffect(() => {
         try {
-            const mnemonic = generateMnemonic(wordlist);
-            setMnemonic(mnemonic);
+
+            console.log("handle generation call");
+            handleGeneration();
+
         } catch (error) {
             showPanel("Error occured whle generating seed phrase", "error")
         }
     }, []);
+
+    const handleGeneration = async () => {
+        const hashedClass = new Hashed();
+        console.log("class created");
+        setHashed(hashedClass);
+        console.log("class set to zustand")
+
+        const mnemonic = await hashedClass.generateMnemonic();
+        console.log("mnemonic from function: ", mnemonic.toString());
+        setMnemonic(mnemonic);
+        console.log("mnemonic set");
+    }
 
     const handleCopy = async () => {
         try {

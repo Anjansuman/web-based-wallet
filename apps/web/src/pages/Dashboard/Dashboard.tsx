@@ -8,7 +8,7 @@ import { Receive } from "./pages/Receive";
 import { useHashed } from "../../context/HashedAtom";
 import { AddAccount } from "./pages/AddAccount/AddAccount";
 import { Settings } from "./pages/Settings";
-import { EditAccounts } from "./pages/EditAccounts";
+import { EditAccounts } from "./pages/EditAccounts/EditAccounts";
 import gsap from "gsap";
 import { Send } from "./pages/Send";
 
@@ -28,12 +28,13 @@ export default function Dashboard() {
     useEffect(() => {
         if (!hashed) return;
 
-        const getValue = async () => {
-            const value = await hashed.setBalanceOfCurrentAccount();
-            setBalance(value);
-            return value
-        }
-        getValue();
+        // const getValue = async () => {
+        //     const value = await hashed.setBalanceOfCurrentAccount();
+        //     setBalance(value);
+        //     return value
+        // }
+        // getValue();
+        setBalance(0);
 
     }, [hashed]);
 

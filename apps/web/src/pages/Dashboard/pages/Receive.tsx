@@ -10,10 +10,10 @@ const QR = makeAsyncComponent(React, generate);
 
 interface ReceiveProps {
     close: () => void,
-
+    publicKey?: string // this is used for account profile to show address
 }
 
-export const Receive = ({ close }: ReceiveProps) => {
+export const Receive = ({ close, publicKey }: ReceiveProps) => {
 
     const { hashed } = useHashed();
     const [pubKey, setPubKey] = useState<string>();
@@ -55,29 +55,40 @@ export const Receive = ({ close }: ReceiveProps) => {
     }, [hashed]);
 
 
-    return <div className="h-full w-full absolute z-30 top-[70px] left-0 flex justify-start items-start ">
+    return <div className={`h-full w-full absolute z-30 ${publicKey ? "top-0" : "top-[70px]"} left-0 flex justify-start items-start `}>
         <div
-            className="w-full h-[530px] bg-neutral-900 flex flex-col justify-between items-center p-3 "
+            className={`w-full ${publicKey ? "h-full overflow-y-visible" : "h-[530px]"} bg-neutral-900 flex flex-col justify-between items-center p-3 `}
             ref={panelRef}
         >
             {
-                pubKey && <div className="p-1 bg-neutral-100 rounded-md ">
-                    <QR content={pubKey} className="qr-code size-40 " />
-                </div>
+                publicKey ? <div className="w-full flex justify-center items-center p-3 shadow-md text-base font-semibold ">
+                    Public Key
+                </div> : ""
+            }
+            {
+                publicKey ?
+                    <div className="p-1 bg-neutral-100 rounded-md ">
+                        <QR content={publicKey} className="qr-code size-40 " />
+                    </div>
+                    : pubKey && <div className="p-1 bg-neutral-100 rounded-md ">
+                        <QR content={pubKey} className="qr-code size-40 " />
+                    </div>
             }
 
             <div className="w-full border border-[#2c2c2c] rounded-xl bg-neutral-950 overflow-hidden ">
                 <div className="w-full text-center text-white break-words font-mono text-sm border-b border-[#2c2c2c] p-3 ">
-                    {pubKey}
+                    {
+                        publicKey ? publicKey : pubKey
+                    }
                 </div>
                 <div
                     className="w-full hover:bg-neutral-900 hover:text-white transition-colors ease-in-out text-base p-3 flex justify-center items-center cursor-pointer "
-                    onClick={() => navigator.clipboard.writeText(pubKey || "")}
+                    onClick={() => navigator.clipboard.writeText(publicKey || pubKey || "")}
                 >
                     Copy
                 </div>
             </div>
-            
+
             <div className="w-full p-2 ">
                 <Button
                     content={"Close"}

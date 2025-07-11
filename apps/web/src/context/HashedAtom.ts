@@ -11,11 +11,14 @@ interface useHashed {
 export const useHashed = create<useHashed>((set) => ({
     hashed: null,
     setHashed: (hashed) => {
-        // ye case isiliye hataye h kyunki hashed jo if me use kr rhe wo bheja ja rha
-        // if(hashed !== null) return;
-        set({
-            hashed: hashed
-        });
+        set((state) => {
+            if (state.hashed) {
+                return {};
+            }
+            return {
+                hashed: hashed
+            };
+        })
     },
     removeHashed: () => set({
         hashed: null

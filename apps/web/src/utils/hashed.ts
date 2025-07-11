@@ -1,12 +1,11 @@
 import crypto from "crypto-js";
 // import { usePopUp } from "../context/PopUpPanelContext";
 import type { Account, AccountType2, KeyPair } from "../types/AccountType";
-import { Wallet } from "@ethereumjs/wallet";
-import { mnemonicToSeedSync } from "@scure/bip39";
 import type { NetworkType } from "../types/NetworkType";
-import { HDKey } from "@scure/bip32";
-import { usePopUp } from "../context/PopUpPanelContext";
+// import { usePopUp } from "../context/PopUpPanelContext";
 import axios from "axios";
+import { HDNodeWallet, Wallet } from "ethers";
+import { Mnemonic } from "ethers";
 
 export class Hashed {
 
@@ -122,10 +121,6 @@ export class Hashed {
         return bytes;
     }
 
-    public mnemonicToSeedSync(mnemonic: string): Uint8Array {
-        return mnemonicToSeedSync(mnemonic);
-    }
-
     // <------------------ ACCOUNTS ------------------>
 
     private fetchAndDecryptAccounts(): Promise<Account[]> | null {
@@ -147,7 +142,8 @@ export class Hashed {
                         const allAccounts: Account[] = decryptedAccounts.map((acc, i) => ({
                             name: accounts[i].name,
                             privateKey: acc.privateKey,
-                            publicKey: acc.publicKey
+                            publicKey: acc.publicKey,
+                            derivedAccountNum: acc.derivedAccountNum
                         }));
 
 
@@ -166,53 +162,6 @@ export class Hashed {
             console.log(error);
             this.showPanel("Error occured while entering password", "error");
             return null;
-        }
-    }
-
-    // todo
-    public createAccountFromSeed(): void {
-        if (!this.mnemonic) {
-            this.showPanel("Unable to fetch seed phrase for creation of account", "error");
-            return;
-        }
-        // problem is ki account create to kr le but pehle fetch krna padega ki kitna account is seed se bana h kyunki wallet me imported accounts bhi rahenge
-        // increase the currentSeedAccount var here if a seed account gets created
-    }
-
-    public importAccount(name: string, privateKey: string): void {
-        try {
-
-            const publicKey = this.getPublicKey(privateKey);
-
-            const str = JSON.stringify({
-                privateKey: privateKey.startsWith("0x") ? privateKey : ("0x" + privateKey),
-                publicKey: publicKey.startsWith("0x") ? publicKey : ("0x" + publicKey)
-            });
-
-            this.accounts?.push({
-                name: name,
-                privateKey: privateKey.startsWith("0x") ? privateKey : ("0x" + privateKey),
-                publicKey: publicKey.startsWith("0x") ? publicKey : ("0x" + publicKey)
-            });
-
-            const hashedKey = this.encryptString(str);
-
-            const newAccount: AccountType2 = {
-                name: name,
-                account: hashedKey
-            };
-
-            chrome.storage.local.get("accounts", (data) => {
-                const accounts: AccountType2[] = data.accounts;
-
-                accounts.push(newAccount);
-
-                chrome.storage.local.set({ accounts });
-
-            });
-
-        } catch (error) {
-            this.showPanel("Unable to import account", "error");
         }
     }
 
@@ -297,6 +246,16 @@ export class Hashed {
 
     // <------------------ MNEMONICS ------------------>
 
+    public async generateMnemonic(): Promise<string> {
+
+        const entropy = new Uint8Array(16);
+        window.crypto.getRandomValues(entropy);
+
+        this.mnemonic = Mnemonic.entropyToPhrase(entropy);
+
+        return this.mnemonic;
+    }
+
     private fetchAndDecryptSeedPhrase(password: string): Promise<string> | null {
 
         if (this.password !== password) {
@@ -363,11 +322,8 @@ export class Hashed {
     }
 
     public getPublicKey(privateKey: string): string {
-        const bufferedPrivateKey = this.toBytes(privateKey);
-        const wallet = Wallet.fromPrivateKey(bufferedPrivateKey);
-        const publicKey = "0x" + this.toHex(wallet.getPublicKey());
-
-        return publicKey;
+        const wallet = new Wallet(privateKey);
+        return wallet.address;
     }
 
     // <------------------ DETAILS ------------------>
@@ -421,9 +377,7 @@ export class Hashed {
                 iv: this.iv
             };
 
-            const seed = this.mnemonicToSeedSync(mnemonic);
-
-            const keypair = this.generateKeyPair(seed);
+            const keypair = this.generateKeyPair();
 
             if (!keypair) {
                 this.showPanel("Key-pair generation failed!", "error");
@@ -438,7 +392,8 @@ export class Hashed {
 
             const str = JSON.stringify({
                 privateKey: privateKey.startsWith("0x") ? privateKey : ("0x" + privateKey),
-                publicKey: publicKey.startsWith("0x") ? publicKey : ("0x" + publicKey)
+                publicKey: publicKey.startsWith("0x") ? publicKey : ("0x" + publicKey),
+                derivedAccountNum: 0
             });
 
             console.log(str);
@@ -457,11 +412,103 @@ export class Hashed {
             return true;
 
         } catch (error) {
+            console.log("error: ", error);
             this.showPanel("Setting password failed", "error");
             return false;
         }
     }
 
+    public importAccount(name: string, privateKey: string): boolean {
+        try {
+
+            if (this.accounts.some(acc => acc.privateKey === privateKey)) return false;
+
+            const publicKey = this.getPublicKey(privateKey);
+
+            const str = JSON.stringify({
+                privateKey: privateKey.startsWith("0x") ? privateKey : ("0x" + privateKey),
+                publicKey: publicKey.startsWith("0x") ? publicKey : ("0x" + publicKey),
+                derivedAccountNum: -1
+            });
+
+            this.accounts.push({
+                name: name,
+                privateKey: privateKey.startsWith("0x") ? privateKey : ("0x" + privateKey),
+                publicKey: publicKey.startsWith("0x") ? publicKey : ("0x" + publicKey),
+                derivedAccountNum: -1 // -1 means it is not derived from seed phrase
+            });
+
+            const hashedKey = this.encryptString(str);
+
+            const newAccount: AccountType2 = {
+                name: name,
+                account: hashedKey
+            };
+
+            chrome.storage.local.get("accounts", (data) => {
+                const accounts: AccountType2[] = data.accounts;
+
+                accounts.push(newAccount);
+
+                chrome.storage.local.set({ accounts });
+
+            });
+
+            return true;
+
+        } catch (error) {
+            this.showPanel("Unable to import account", "error");
+            return false;
+        }
+    }
+
+    public createAccountFromSeed(name: string): boolean {
+        try {
+
+            const keypair = this.generateKeyPair();
+
+            if (!keypair) {
+                console.log("keypair creation failed");
+                this.showPanel("Account creation failed", "error");
+                return false;
+            }
+
+            const { privateKey, publicKey } = keypair;
+
+            const details = JSON.stringify({
+                privateKey: privateKey.startsWith("0x") ? privateKey : ("0x" + privateKey),
+                publicKey: publicKey.startsWith("0x") ? publicKey : ("0x" + publicKey),
+                derivedAccountNum: this.currentSeedAccount
+            });
+
+            this.accounts.push({
+                name: name,
+                privateKey: privateKey.startsWith("0x") ? privateKey : ("0x" + privateKey),
+                publicKey: publicKey.startsWith("0x") ? publicKey : ("0x" + publicKey),
+                derivedAccountNum: this.currentSeedAccount
+            });
+
+            const hashedDetails = this.encryptString(details);
+
+            const newAccount: AccountType2 = {
+                name: name,
+                account: hashedDetails
+            };
+
+            chrome.storage.local.get("accounts", (data) => {
+                const accounts: AccountType2[] = data.accounts;
+                accounts.push(newAccount);
+                chrome.storage.local.set({ accounts });
+            })
+
+            return true;
+
+        } catch (error) {
+            console.log(error);
+            this.showPanel("Account creation failed", "error");
+            return false
+        }
+    }
 
     // <------------------ NETWORK ------------------>
 
@@ -491,10 +538,10 @@ export class Hashed {
     }
 
     public showPanel(message: string, type: "success" | "error"): void {
-        const { showPanel } = usePopUp();
-        showPanel(message, type);
-        // console.log("type: ", type);
-        // console.log("message: ", message);
+        // const { showPanel } = usePopUp();
+        // showPanel(message, type);
+        console.log("type: ", type);
+        console.log("message: ", message);
     }
 
     public emptyHashedState(): void { // use it when required only
@@ -505,28 +552,22 @@ export class Hashed {
 
     }
 
-    public generateKeyPair(seed: Uint8Array): KeyPair | null {
+    public generateKeyPair(): KeyPair | null {
+
+        // const seed = this.mnemonicToSeed(this.mnemonic);
 
         const path = this.getPath();
-
-        const hdNode = HDKey.fromMasterSeed(seed);
-        const child = hdNode.derive(path);
-
-        if (!child || !child.privateKey) {
-            this.showPanel("key-pair generation failed!", "error");
-            return null;
-        }
+        const mnemonicObject = Mnemonic.fromPhrase(this.mnemonic);
+        const wallet = HDNodeWallet.fromMnemonic(mnemonicObject, path);
 
         this.currentSeedAccount++;
 
-        const wallet = Wallet.fromPrivateKey(child.privateKey);
-
-        const privateKey = "0x" + this.toHex(wallet.getPrivateKey());
-        const publicKey = "0x" + this.toHex(wallet.getPublicKey());
+        const privateKey = wallet.privateKey.startsWith("0x") ? wallet.privateKey : "0x" + wallet.privateKey;
+        const publicKey = wallet.address.startsWith("0x") ? wallet.address : "0x" + wallet.address;
 
         return {
-            privateKey,
-            publicKey
+            privateKey: privateKey,
+            publicKey: publicKey
         };
 
     }

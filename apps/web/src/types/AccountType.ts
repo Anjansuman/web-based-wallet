@@ -13,7 +13,8 @@ export interface AccountType2 {
 export interface Account {
     name: string,
     privateKey: string,
-    publicKey: string
+    publicKey: string,
+    derivedAccountNum: number
 }
 
 export interface KeyPair {

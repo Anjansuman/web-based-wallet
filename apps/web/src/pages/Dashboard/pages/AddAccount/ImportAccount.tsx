@@ -1,9 +1,11 @@
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useHashed } from '../../../../context/HashedAtom';
 import Button from '../../../../components/ui/Button';
 import gsap from 'gsap';
 import { Input } from "../../../../components/ui/Input";
+import { TextArea } from "../../../../components/ui/TextArea";
+import { Wallet } from "ethers";
 
 
 interface ReceiveProps {
@@ -11,25 +13,43 @@ interface ReceiveProps {
 
 }
 
-export const AddNewAccount = ({ close }: ReceiveProps) => {
+export const ImportAccount = ({ close }: ReceiveProps) => {
 
     const { hashed } = useHashed();
     const panelRef = useRef<HTMLDivElement>(null);
 
     const accountNameRef = useRef<HTMLInputElement>(null);
-    // const [accountName, setAccountName] = useState<string>();
+    const privateKeyRef = useRef<HTMLTextAreaElement>(null);
+
+    const [accountName, setAccountName] = useState<string | null>(null);
+    const [privateKey, setPrivateKey] = useState<string | null>(null);
+
+    const [wrongPrivateKey, setWrongPrivateKey] = useState<boolean>(false);
+
+    const privateKeyCheck = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        try {
+            setWrongPrivateKey(false);
+            const wallet = new Wallet(e.target.value);
+            if(wallet) {
+                setWrongPrivateKey(false);
+                setPrivateKey(e.target.value);
+            }
+        } catch (error) {
+            setWrongPrivateKey(true);
+        }
+    }
 
     const handleCreate = () => {
-        if(!accountNameRef.current || !hashed) return;
+        if(!accountName || !privateKey || !hashed) return;
 
-        const accName =  accountNameRef.current.value;
-        const done = hashed.createAccountFromSeed(accName);
+        const done = hashed.importAccount(accountName, privateKey);
 
         if(done) {
             onClose();
         } else {
-            // handle error
+            // show error
         }
+
     }
 
     useEffect(() => {
@@ -79,7 +99,15 @@ export const AddNewAccount = ({ close }: ReceiveProps) => {
                 <Input
                     placeholder="Account Name"
                     ref={accountNameRef}
-                    // onChange={(e) => setAccountName(e.target.value)}
+                    onChange={(e) => setAccountName(e.target.value)}
+                />
+
+                <TextArea
+                    placeholder="Private Key"
+                    type="password"
+                    ref={privateKeyRef}
+                    onChange={(e) => privateKeyCheck(e)}
+                    error={wrongPrivateKey}
                 />
 
             </div>
@@ -93,6 +121,7 @@ export const AddNewAccount = ({ close }: ReceiveProps) => {
                     content={"Create"}
                     onClick={handleCreate}
                     colored
+                    disabled={wrongPrivateKey || !accountName || !privateKey}
                 />
             </div>
         </div>
