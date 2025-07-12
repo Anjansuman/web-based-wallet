@@ -5,23 +5,23 @@ import Button from '../../../../components/ui/Button';
 import gsap from 'gsap';
 import type { Account } from "../../../../types/AccountType";
 import { GrayButton } from "../../../../components/ui/GrayButton";
-import { IconChevronCompactRight } from "@tabler/icons-react";
+import { IconChevronCompactRight, IconPencil } from "@tabler/icons-react";
 import { Receive } from "../Receive";
 
 
 interface ReceiveProps {
-    type?: "seedAccount" | "importedAccount" | "watchAccount" // using this make the component to show profile buttons based on these
     close: () => void,
     data: Account
 }
 
-export const AccountProfile = ({ type = "seedAccount", close, data }: ReceiveProps) => {
+export const AccountProfile = ({ close, data }: ReceiveProps) => {
 
     const { hashed } = useHashed();
     const panelRef = useRef<HTMLDivElement>(null);
 
     const [infoPanel, setInfoPanel] = useState<string | null>(null);
     const [mnemonic, setMnemonic] = useState<string>("");
+    const [numOfAccounts, setNumOfAccounts] = useState<number>(0);
 
     useEffect(() => {
 
@@ -48,10 +48,26 @@ export const AccountProfile = ({ type = "seedAccount", close, data }: ReceivePro
         });
     }
 
+    const handleDeleteAccount = () => {
+        if (!hashed) return;
+
+        const done = hashed.deleteAccount(data.name, data.publicKey);
+
+        if (done) {
+            onClose();
+        } else {
+            // handle the false statement
+        }
+
+    }
+
     useEffect(() => {
         if (!hashed) return;
 
         const m = hashed.getMnemonic();
+        const totalAccounts = hashed.getAccounts().length;
+
+        setNumOfAccounts(totalAccounts);
         setMnemonic(m);
     }, [hashed]);
 
@@ -66,13 +82,21 @@ export const AccountProfile = ({ type = "seedAccount", close, data }: ReceivePro
 
             <div className="w-full h-full pt-4 flex flex-col justify-start items-center gap-y-4 overflow-x-hidden overflow-y-auto [::-webkit-scrollbar]:hidden [scrollbar-width:none] ">
 
-                <div className="h-20 w-20 bg-[#1e1e1e] rounded-full border border-neutral-600 flex justify-center items-center text-center text-lg ">
+                <div className="h-20 w-20 relative bg-[#1e1e1e] rounded-full border border-neutral-600 flex justify-center items-center text-center text-lg ">
                     {data.name.charAt(0)}
+                    {/* edit icon */}
+                    <div
+                        className="absolute group z-10 bottom-0.5 right-0.5 p-0.5 border border-neutral-600 bg-[#1e1e1e] hover:bg-[#ff4d67] transition-colors rounded-full flex justify-center items-center cursor-pointer "
+                        onClick={() => {}}
+                    >
+                        <IconPencil className="size-4 fill-[#1e1e1e] stroke-neutral-600 group-hover:fill-white group-hover:stroke-black stroke-1 transition-colors " />
+                    </div>
                 </div>
 
-                <div className="w-full flex flex-col gap-y-[1px] rounded-xl overflow-hidden ">
+                {/* These options will be directly accessed by unlocked wallet */}
+                <div className="w-full flex flex-col gap-y-0.5 rounded-xl overflow-hidden ">
                     {
-                        contentArray(type, data, mnemonic).noPassContent.map((content, index) => (
+                        contentArray(data, mnemonic).noPassContent.map((content, index) => (
                             <GrayButton
                                 key={index}
                                 className="group"
@@ -92,10 +116,10 @@ export const AccountProfile = ({ type = "seedAccount", close, data }: ReceivePro
                         ))
                     }
                 </div>
-
-                <div className="w-full flex flex-col gap-y-[1px] rounded-xl overflow-hidden ">
+                {/* These options will require password to view */}
+                <div className="w-full flex flex-col gap-y-0.5 rounded-xl overflow-hidden ">
                     {
-                        contentArray(type, data, mnemonic).passContent.map((content, index) => (
+                        contentArray(data, mnemonic).passContent.map((content, index) => (
                             <GrayButton
                                 key={index}
                                 className="group"
@@ -115,11 +139,17 @@ export const AccountProfile = ({ type = "seedAccount", close, data }: ReceivePro
                     }
                 </div>
 
-                <GrayButton>
-                    <div className="text-red-500 justify-center ">
-                        Remove Account
-                    </div>
-                </GrayButton>
+                {
+                    numOfAccounts > 1
+                        ?
+                        <GrayButton onClick={handleDeleteAccount}>
+                            <div className="w-full text-red-500 justify-center ">
+                                Remove Account
+                            </div>
+                        </GrayButton>
+                        :
+                        ""
+                }
 
             </div>
 
@@ -127,11 +157,6 @@ export const AccountProfile = ({ type = "seedAccount", close, data }: ReceivePro
                 <Button
                     content={"Close"}
                     onClick={onClose}
-                />
-                <Button
-                    content={"Create"}
-                    onClick={() => { }}
-                    colored
                 />
             </div>
         </div>
@@ -148,7 +173,6 @@ interface contentType {
 }
 
 export const contentArray = (
-    type: "seedAccount" | "importedAccount" | "watchAccount",
     data: Account,
     mnemonic: string
 ) => {
@@ -166,12 +190,12 @@ export const contentArray = (
 
     let passContent: contentType[] = [];
 
-    if (type === "importedAccount") {
+    if (data.derivedAccountNum === -1) {
         passContent.push({
             label: "Show Private Key",
             valueToLaterShow: data.privateKey
         });
-    } else if (type === "seedAccount") {
+    } else if (data.derivedAccountNum >= 0) {
         passContent.push({
             label: "Show Private Key",
             valueToLaterShow: data.privateKey

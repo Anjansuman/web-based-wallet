@@ -1,11 +1,10 @@
 import crypto from "crypto-js";
-// import { usePopUp } from "../context/PopUpPanelContext";
+import axios from "axios";
+import { HDNodeWallet, Wallet, Mnemonic } from "ethers";
+
 import type { Account, AccountType2, KeyPair } from "../types/AccountType";
 import type { NetworkType } from "../types/NetworkType";
 // import { usePopUp } from "../context/PopUpPanelContext";
-import axios from "axios";
-import { HDNodeWallet, Wallet } from "ethers";
-import { Mnemonic } from "ethers";
 
 export class Hashed {
 
@@ -60,20 +59,26 @@ export class Hashed {
         }).toString();
     }
 
-    public decryptMnemonic(cipherText: crypto.lib.CipherParams): string {
-
-        console.log("key: ", this.key);
-        console.log("iv: ", this.iv);
-
+    public decryptMnemonic(cipherText: crypto.lib.CipherParams | string): string {
         if (!this.key || !this.iv) {
-            this.showPanel("Unwanted error while encrypting seed phrase / mnemonic", "error");
+            this.showPanel("Unwanted error while decrypting seed phrase / mnemonic", "error");
             return "";
         }
 
-        return crypto.AES.decrypt(cipherText, this.key.toString(), {
-            iv: crypto.enc.Hex.parse(this.iv)
-        }).toString();
+        const bytes = crypto.AES.decrypt(cipherText, this.key, {
+            iv: crypto.enc.Hex.parse(this.iv),
+        });
+
+        const decrypted = bytes.toString(crypto.enc.Utf8);
+
+        if (!decrypted || decrypted.trim().split(" ").length < 12) {
+            this.showPanel("Decryption failed: Invalid seed phrase", "error");
+            return "";
+        }
+
+        return decrypted;
     }
+
 
     public encryptString(str: string): string {
 
@@ -141,7 +146,7 @@ export class Hashed {
 
                         const allAccounts: Account[] = decryptedAccounts.map((acc, i) => ({
                             name: accounts[i].name,
-                            privateKey: acc.privateKey,
+                            privateKey: acc.privateKey!,
                             publicKey: acc.publicKey,
                             derivedAccountNum: acc.derivedAccountNum
                         }));
@@ -163,67 +168,6 @@ export class Hashed {
             this.showPanel("Error occured while entering password", "error");
             return null;
         }
-    }
-
-    public deleteAccount(name: string, publicKey: string): void {
-        if (!this.accounts) {
-            this.showPanel("Unable to fetch accounts", "error");
-            return;
-        }
-
-        // const accountIndex: number | undefined = this.accounts.find((acc, index): number | undefined => {
-        //     if(acc.name === name && acc.publicKey === publicKey) {
-        //         return index;
-        //     }
-        // });
-
-        let accountIndex = 0;
-
-        for (let i = 0; i < this.accounts.length; i++) {
-            if (this.accounts[i].name === name && this.accounts[i].publicKey === publicKey) {
-                accountIndex = i;
-                break;
-            }
-        }
-
-        if (!accountIndex) {
-            this.showPanel("Account doesn't exist", "error");
-            return;
-        }
-
-        // removed from the state
-        const allAccounts = this.accounts.map((acc) => {
-            if (acc.name !== name && acc.publicKey !== publicKey) return acc;
-        });
-
-        if (!allAccounts || allAccounts.length === 0 || typeof allAccounts === undefined) {
-            this.showPanel("No accounts left!", "error");
-            return;
-        }
-
-        // correct this
-        this.accounts = allAccounts as Account[];
-
-        chrome.storage.local.get("accounts", (data) => {
-            let accounts: AccountType2[] = data.accounts;
-
-            // map over this accounts and remove the deleting account
-            const updatedAccounts: (AccountType2 | undefined)[] = accounts.map((acc, index) => {
-                if (index !== accountIndex) {
-                    return acc;
-                }
-            });
-
-            if (!updatedAccounts) {
-                return;
-            }
-
-            // fix this [i think there's security issues]
-            accounts = updatedAccounts as AccountType2[];
-            chrome.storage.local.set({ accounts });
-
-        })
-
     }
 
     public getAccounts(): Account[] {
@@ -276,9 +220,16 @@ export class Hashed {
 
                         this.iv = iv;
                         this.salt = salt;
-
                         this.key = this.PKBDF2(password);
+
+                        console.log("salt: ", this.salt);
+                        console.log("key: ", this.key);
+                        console.log("iv: ", this.iv);
+                        console.log("ciphertext: ", ciphertext);
+
                         const decryptedSeed = this.decryptMnemonic(ciphertext);
+
+                        console.log("decrypted seed: ", decryptedSeed);
 
                         this.mnemonic = decryptedSeed;
 
@@ -334,6 +285,10 @@ export class Hashed {
         this.password = password;
     }
 
+    public getPassword(): string {
+        return this.password;
+    }
+
     // <------------------ WALLET ------------------>
 
     public async unlockWallet(password: string): Promise<boolean> { // this will be used to unlock wallet
@@ -343,10 +298,12 @@ export class Hashed {
         this.password = password;
 
         this.mnemonic = await this.fetchAndDecryptSeedPhrase(password)!;
+        console.log("mnemonic: ", this.mnemonic);
 
         this.accounts = await this.fetchAndDecryptAccounts()!;
 
         this.setSelectedAccount(0);
+        this.setCurrentSeedIndex();
 
         return true;
     }
@@ -370,6 +327,8 @@ export class Hashed {
             console.log("iv: ", this.iv);
 
             const ciphertext = this.encryptMnemonic();
+
+            console.log("ciphertext: ", ciphertext);
 
             const vault = {
                 ciphertext: ciphertext,
@@ -465,9 +424,12 @@ export class Hashed {
     public createAccountFromSeed(name: string): boolean {
         try {
 
+            console.log("current seed account: ", this.currentSeedAccount);
+
             const keypair = this.generateKeyPair();
 
             if (!keypair) {
+                this.currentSeedAccount--;
                 console.log("keypair creation failed");
                 this.showPanel("Account creation failed", "error");
                 return false;
@@ -507,6 +469,130 @@ export class Hashed {
             console.log(error);
             this.showPanel("Account creation failed", "error");
             return false
+        }
+    }
+
+    public addWatchAccount(name: string, publicKey: string): boolean {
+        try {
+            
+            const newAccount: Account = {
+                name: name,
+                publicKey: publicKey,
+                derivedAccountNum: -2
+            }
+
+            this.accounts.push(newAccount);
+
+            // encrypting the new account
+            const str = JSON.stringify({
+                publicKey: publicKey,
+                derivedAccountNum: -2
+            });
+
+            const hashedAccount = this.encryptString(str);
+
+            chrome.storage.local.get("accounts", (data) => {
+
+                const accounts: AccountType2[] = data.accounts;
+
+                accounts.push({
+                    account: hashedAccount,
+                    name: name
+                });
+
+                chrome.storage.local.set({ accounts });
+
+            });
+
+            return true;
+
+        } catch (error) {
+            this.showPanel("failed to add watch address", "error");
+            return false;
+        }
+    }
+
+    public deleteAccount(name: string, publicKey: string): boolean {
+        try {
+            if (!this.accounts) {
+                this.showPanel("Unable to fetch accounts", "error");
+                return false;
+            }
+
+            // First check if theres only one account left or not
+            if (this.accounts.length <= 1) {
+                this.showPanel("Can't delete account", "error");
+                return false;
+            }
+
+            const accountIndex = this.accounts.findIndex((acc) => (acc.name === name && acc.publicKey === publicKey));
+
+            if (!accountIndex) {
+                this.showPanel("Account doesn't exist", "error");
+                return false;
+            }
+
+            let allAccounts: Account[] = [];
+
+            // removed from the state
+            this.accounts.map((acc) => {
+                if (acc.name !== name && acc.publicKey !== publicKey) {
+                    allAccounts.push(acc);
+                }
+            });
+
+            if (!allAccounts || allAccounts.length === 0 || typeof allAccounts === undefined) {
+                this.showPanel("No accounts left!", "error");
+                return false;
+            }
+
+            // correct this
+            this.accounts = allAccounts;
+
+            // deleting from the local storage
+            chrome.storage.local.get("accounts", (data) => {
+                let accounts: AccountType2[] = data.accounts;
+
+                // map over this accounts and remove the deleting account
+                const updatedAccounts: AccountType2[] = accounts.filter((acc, index) => {
+                    if (index !== accountIndex) {
+                        return acc;
+                    }
+                })
+
+                // can't directly push the accounts, first we have to encrypt it
+
+                if (!updatedAccounts) {
+                    return false;
+                }
+
+                // fix this [i think there's security issues]
+                accounts = updatedAccounts;
+                chrome.storage.local.set({ accounts });
+
+            });
+
+            // this will set the seed account index automatically, cause we don't user will delete which account
+            this.setCurrentSeedIndex();
+
+            return true;
+
+        } catch (error) {
+            this.showPanel("Can't delete account", "error");
+            return false;
+        }
+    }
+
+    public changePassword(password: string): boolean {
+        try {
+            
+            this.password = password;
+
+            return true;
+
+        } catch (error) {
+            this.showPanel("Failed to change password", "error");
+            return false;
         }
     }
 
@@ -556,6 +642,8 @@ export class Hashed {
 
         // const seed = this.mnemonicToSeed(this.mnemonic);
 
+        console.log(this.mnemonic);
+
         const path = this.getPath();
         const mnemonicObject = Mnemonic.fromPhrase(this.mnemonic);
         const wallet = HDNodeWallet.fromMnemonic(mnemonicObject, path);
@@ -574,6 +662,19 @@ export class Hashed {
 
     private getPath(): string {
         return `m/44'/60'/0'/0/${this.currentSeedAccount}`;
+    }
+
+    private setCurrentSeedIndex() { // this will be used to set current seed account number to derive accounts further
+        let highestValue: number = 0;
+
+        this.accounts.map((acc) => {
+            if (acc.derivedAccountNum > highestValue) {
+                highestValue = acc.derivedAccountNum;
+            }
+        });
+
+        this.currentSeedAccount = highestValue + 1;
+
     }
 
     public async setBalanceOfCurrentAccount() {

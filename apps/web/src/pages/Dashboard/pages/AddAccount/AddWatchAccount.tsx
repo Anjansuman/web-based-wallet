@@ -13,7 +13,7 @@ interface ReceiveProps {
 
 }
 
-export const PassCheck = ({ close }: ReceiveProps) => {
+export const AddWatchAccount = ({ close }: ReceiveProps) => {
 
     const { hashed } = useHashed();
     const panelRef = useRef<HTMLDivElement>(null);

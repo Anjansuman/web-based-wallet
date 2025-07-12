@@ -7,6 +7,7 @@ import { IconBracketsContain, IconDownload, IconEye, IconPlus } from "@tabler/ic
 import { GrayButton } from "../../../../components/ui/GrayButton";
 import { AddNewAccount } from "./AddNewAccount";
 import { ImportAccount } from "./ImportAccount";
+import { AddWatchAccount } from "./AddWatchAccount";
 
 
 interface ReceiveProps {
@@ -105,7 +106,7 @@ export const AddAccount = ({ close }: ReceiveProps) => {
         {newAccountPanel === "newAccount" && <AddNewAccount close={() => setNewAccountPanel(null)} />}
         {newAccountPanel === "newRecoveryPhrase" && <AddNewAccount close={() => setNewAccountPanel(null)} />}
         {newAccountPanel === "importAccount" && <ImportAccount close={() => setNewAccountPanel(null)} />}
-        {newAccountPanel === "watchAddress" && <AddNewAccount close={() => setNewAccountPanel(null)} />}
+        {newAccountPanel === "watchAddress" && <AddWatchAccount close={() => setNewAccountPanel(null)} />}
         
     </div>
 }

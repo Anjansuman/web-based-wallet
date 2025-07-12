@@ -20,28 +20,48 @@ export const Receive = ({ close, publicKey }: ReceiveProps) => {
     const panelRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-
         if (!panelRef.current) return;
 
-        gsap.from(panelRef.current, {
-            y: 530,
-            duration: 0.4,
-            ease: "power2.inOut"
-        });
+        if (publicKey) {
+            // animation of right to left for showing public key of an account
+            gsap.from(panelRef.current, {
+                x: 360,
+                duration: 0.4,
+                ease: "power2.inOut"
+            });
+        } else {
+            // animation of bottom to up, for independent page
+            gsap.from(panelRef.current, {
+                y: 530,
+                duration: 0.4,
+                ease: "power2.inOut"
+            });
+        }
 
     }, []);
 
     const onClose = () => {
         if (!panelRef.current) return;
 
-        gsap.to(panelRef.current, {
-            y: 530,
-            duration: 0.4,
-            ease: "power2.inOut",
-            onComplete: () => {
-                close()
-            }
-        });
+        if (publicKey) {
+            gsap.to(panelRef.current, {
+                x: 360,
+                duration: 0.4,
+                ease: "power2.inOut",
+                onComplete: () => {
+                    close()
+                }
+            });
+        } else {
+            gsap.to(panelRef.current, {
+                y: 530,
+                duration: 0.4,
+                ease: "power2.inOut",
+                onComplete: () => {
+                    close()
+                }
+            });
+        }
     }
 
     useEffect(() => {
