@@ -106,7 +106,7 @@ export const Send = ({ close }: ReceiveProps) => {
                     onClick={onClose}
                 />
                 <Button
-                    content={"Next"}
+                    content={"Send"}
                     onClick={() => { }}
                     colored
                 />

@@ -1,54 +1,35 @@
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useHashed } from '../../../../context/HashedAtom';
 import Button from '../../../../components/ui/Button';
 import gsap from 'gsap';
 import { Input } from "../../../../components/ui/Input";
-import { TextArea } from "../../../../components/ui/TextArea";
-import { isAddress } from "ethers";
+import { IconAlertTriangle, IconEyeExclamation, IconLockPassword } from "@tabler/icons-react";
 
 
 interface ReceiveProps {
+    type: "privateKey" | "seedPhrase" | "passwordChange",
     close: () => void,
-
+    done: (isDone: boolean, type: "privateKey" | "seedPhrase" | "passwordChange") => void
 }
 
-export const PassCheck = ({ close }: ReceiveProps) => {
+export const PassCheck = ({ type, close, done }: ReceiveProps) => {
 
     const { hashed } = useHashed();
     const panelRef = useRef<HTMLDivElement>(null);
 
-    const accountNameRef = useRef<HTMLInputElement>(null);
-    const privateKeyRef = useRef<HTMLTextAreaElement>(null);
+    const [actualPassword, setActualpassword] = useState<string>("");
+    const passwordRef = useRef<HTMLInputElement>(null);
 
-    const [accountName, setAccountName] = useState<string | null>(null);
-    const [publicKey, setPublicKey] = useState<string | null>(null);
 
-    const [wrongPublicKey, setWrontPublicKey] = useState<boolean>(false);
+    const handleNext = () => {
+        if(!passwordRef.current) return;
 
-    const publicKeyCheck = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        try {
-            setWrontPublicKey(false);
-            if(!isAddress(e.target.value)) {
-                setWrontPublicKey(true);
-            } else {
-                setPublicKey(e.target.value);
-                setWrontPublicKey(false);
-            }
-        } catch (error) {
-            setWrontPublicKey(true);
-        }
-    }
-
-    const handleCreate = () => {
-        if(!accountName || !publicKey || !hashed) return;
-
-        const done = hashed.addWatchAccount(accountName, publicKey);
-
-        if(done) {
+        if(passwordRef.current.value === actualPassword) {
+            done(true, type);
             onClose();
         } else {
-            // show error
+            // do something with the wrong password
         }
 
     }
@@ -79,6 +60,10 @@ export const PassCheck = ({ close }: ReceiveProps) => {
     }
 
     useEffect(() => {
+        if(!hashed) return;
+
+        const pass = hashed.getPassword();
+        setActualpassword(pass);
 
     }, [hashed]);
 
@@ -88,27 +73,30 @@ export const PassCheck = ({ close }: ReceiveProps) => {
             ref={panelRef}
         >
             <div className="w-full flex justify-center items-center p-3 shadow-md text-base font-semibold ">
-                Add a new watch account
+                Verify
             </div>
 
-            <div className="w-full h-full pt-6 flex flex-col justify-start items-center gap-y-6 overflow-x-hidden overflow-y-auto [::-webkit-scrollbar]:hidden [scrollbar-width:none] ">
+            <div className="w-full h-full pt-6 flex flex-col justify-center items-center gap-y-8 overflow-x-hidden overflow-y-auto [::-webkit-scrollbar]:hidden [scrollbar-width:none] ">
 
-                <div className="h-20 w-20 bg-[#1e1e1e] rounded-full border border-neutral-600 flex justify-center items-center text-center text-lg ">
-                    A
+                <div className="flex flex-col gap-y-2  ">
+                    {
+                        contentArray(type).map((detail, index) => (
+                            <div className="flex justify-start items-center gap-x-3 p-4 " key={index} >
+                                <div className="bg-[#ff4d67] rounded-md p-1 text-black flex justify-center items-center ">
+                                    {detail.logo}
+                                </div>
+                                <div className="text-base text-white font-semibold ">
+                                    {detail.text}
+                                </div>
+                            </div>
+                        ))
+                    }
                 </div>
 
                 <Input
-                    placeholder="Account Name"
-                    ref={accountNameRef}
-                    onChange={(e) => setAccountName(e.target.value)}
-                />
-
-                <TextArea
-                    placeholder="Public Key"
-                    type="text"
-                    ref={privateKeyRef}
-                    onChange={(e) => publicKeyCheck(e)}
-                    error={wrongPublicKey}
+                    placeholder="Password"
+                    type={"password"}
+                    ref={passwordRef}
                 />
 
             </div>
@@ -119,12 +107,54 @@ export const PassCheck = ({ close }: ReceiveProps) => {
                     onClick={onClose}
                 />
                 <Button
-                    content={"Create"}
-                    onClick={handleCreate}
+                    content={"Next"}
+                    onClick={handleNext}
                     colored
-                    disabled={wrongPublicKey || !accountName || !publicKey}
                 />
             </div>
         </div>
     </div>
+}
+
+interface contentType {
+    logo: React.ReactNode,
+    text: string
+}
+
+const contentArray = (type: "privateKey" | "seedPhrase" | "passwordChange") => {
+
+    const privateKeyContent: contentType[] = [
+        {
+            logo: <IconLockPassword />,
+            text: "Your private key is like a password for your account."
+        },
+        {
+            logo: <IconAlertTriangle />,
+            text: "If someone gets it, they will have full access to your wallet."
+        },
+        {
+            logo: <IconEyeExclamation />,
+            text: "Never share it with ANYONE."
+        }
+    ];
+
+    const seedPhraseContent: contentType[] = [
+        {
+            logo: <IconLockPassword />,
+            text: "Your secret seed phrase is the master key of your wallet"
+        },
+        {
+            logo: <IconAlertTriangle />,
+            text: "If someone gets it, they will have full access to all the wallets."
+        },
+        {
+            logo: <IconEyeExclamation />,
+            text: "Never share it with ANYONE."
+        }
+    ];
+
+    const passwordContent: contentType[] = [];
+
+    return type === "privateKey" ? privateKeyContent : type === "seedPhrase" ? seedPhraseContent : passwordContent;
+
 }

@@ -7,6 +7,7 @@ import type { Account } from "../../../../types/AccountType";
 import { GrayButton } from "../../../../components/ui/GrayButton";
 import { IconChevronCompactRight, IconPencil } from "@tabler/icons-react";
 import { Receive } from "../Receive";
+import { PassCheck } from "../PassCheck/PassCheck";
 
 
 interface ReceiveProps {
@@ -20,8 +21,13 @@ export const AccountProfile = ({ close, data }: ReceiveProps) => {
     const panelRef = useRef<HTMLDivElement>(null);
 
     const [infoPanel, setInfoPanel] = useState<string | null>(null);
+    const [privakeKeyPanel, setPrivateKeyPanel] = useState<boolean>(false);
+    const [seedPhrasePanel, setSeedPhrasePanel] = useState<boolean>(false);
+
     const [mnemonic, setMnemonic] = useState<string>("");
     const [numOfAccounts, setNumOfAccounts] = useState<number>(0);
+
+    const [passwordPanel, setPasswordPanel] = useState<"privateKey" | "seedPhrase" | null>(null);
 
     useEffect(() => {
 
@@ -61,6 +67,21 @@ export const AccountProfile = ({ close, data }: ReceiveProps) => {
 
     }
 
+    const handlePasswordPanel = (index: number) => {
+
+        if (index === 0) setPasswordPanel("privateKey");
+        else if (index === 1) setPasswordPanel("seedPhrase");
+
+    }
+
+    const handlePasswordResult = (isDone: boolean, type: "privateKey" | "seedPhrase" | "passwordChange") => {
+        if(isDone && type === "privateKey") {
+            setPrivateKeyPanel(true);
+        } else if(isDone && type === "seedPhrase") {
+            setSeedPhrasePanel(true);
+        }
+    }
+
     useEffect(() => {
         if (!hashed) return;
 
@@ -87,7 +108,7 @@ export const AccountProfile = ({ close, data }: ReceiveProps) => {
                     {/* edit icon */}
                     <div
                         className="absolute group z-10 bottom-0.5 right-0.5 p-0.5 border border-neutral-600 bg-[#1e1e1e] hover:bg-[#ff4d67] transition-colors rounded-full flex justify-center items-center cursor-pointer "
-                        onClick={() => {}}
+                        onClick={() => { }}
                     >
                         <IconPencil className="size-4 fill-[#1e1e1e] stroke-neutral-600 group-hover:fill-white group-hover:stroke-black stroke-1 transition-colors " />
                     </div>
@@ -124,6 +145,7 @@ export const AccountProfile = ({ close, data }: ReceiveProps) => {
                                 key={index}
                                 className="group"
                                 plain
+                                onClick={() => handlePasswordPanel(index)}
                             >
                                 <div>
                                     {content.label}
@@ -143,7 +165,7 @@ export const AccountProfile = ({ close, data }: ReceiveProps) => {
                     numOfAccounts > 1
                         ?
                         <GrayButton onClick={handleDeleteAccount}>
-                            <div className="w-full text-red-500 justify-center ">
+                            <div className="w-full text-red-500 flex justify-center ">
                                 Remove Account
                             </div>
                         </GrayButton>
@@ -162,6 +184,15 @@ export const AccountProfile = ({ close, data }: ReceiveProps) => {
         </div>
 
         {infoPanel && <Receive close={() => setInfoPanel(null)} publicKey={infoPanel} />}
+
+        {passwordPanel && <PassCheck
+            type={passwordPanel}
+            close={() => setPasswordPanel(null)}
+            done={handlePasswordResult}
+        />}
+
+        {privakeKeyPanel && <Receive close={() => setPrivateKeyPanel(false)} />}
+        {seedPhrasePanel && <Receive close={() => setSeedPhrasePanel(false)} />}
 
     </div>
 }

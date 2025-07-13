@@ -1,8 +1,8 @@
 
 interface ValueProps {
-    amount: number,
+    amount: string,
     currency: String,
-    USD: number
+    USD: string
 }
 
 export default function Value({ amount, currency, USD }: ValueProps) {

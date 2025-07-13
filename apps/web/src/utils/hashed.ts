@@ -1,9 +1,10 @@
 import crypto from "crypto-js";
-import axios from "axios";
-import { HDNodeWallet, Wallet, Mnemonic } from "ethers";
+import { HDNodeWallet, Wallet, Mnemonic, parseEther, parseUnits, formatEther } from "ethers";
 
 import type { Account, AccountType2, KeyPair } from "../types/AccountType";
-import type { NetworkType } from "../types/NetworkType";
+import { Networks, RPC } from "./rpcURLs";
+import { JsonRpcProvider } from "ethers";
+import type { TransactionReceipt } from "ethers";
 // import { usePopUp } from "../context/PopUpPanelContext";
 
 export class Hashed {
@@ -21,8 +22,8 @@ export class Hashed {
     private currentSeedAccount: number = 0;
 
     private selectedAccount: Account | null = null;
-    private selectedNetwork: NetworkType | null = null;
-    private selectedAccountBalance: number = 0;
+    private selectedNetwork: Networks | null = null;
+    private selectedAccountBalance: { token: string, USD: string } = { token: "", USD: "" };
 
     constructor(salt?: string, iv?: string, password?: string, key?: crypto.lib.WordArray, mnemonic?: string) {
         this.salt = salt!;
@@ -174,14 +175,19 @@ export class Hashed {
         return this.accounts;
     }
 
-    public setSelectedAccount(index: number): void {
+    public setSelectedAccount(acc: Account): void {
 
         if (!this.accounts) {
             this.showPanel("Unable to fetch accounts", "error");
             return;
         }
 
-        this.selectedAccount = this.accounts[index];
+        if(!this.accounts.some((account) => account === acc)) {
+            this.showPanel("Unable to set accounts", "error");
+            return;
+        }
+
+        this.selectedAccount = acc;
     }
 
     public getSelectedAccount(): Account {
@@ -302,8 +308,9 @@ export class Hashed {
 
         this.accounts = await this.fetchAndDecryptAccounts()!;
 
-        this.setSelectedAccount(0);
+        this.setSelectedAccount(this.accounts[0]);
         this.setCurrentSeedIndex();
+        this.setSelectedNetwork();
 
         return true;
     }
@@ -364,6 +371,10 @@ export class Hashed {
                 account: accHash
             }];
 
+            const network = Networks.Ethereum_Mainnet;
+
+            chrome.storage.local.set({ network });
+
             chrome.storage.local.set({ vault });
 
             chrome.storage.local.set({ accounts });
@@ -394,7 +405,7 @@ export class Hashed {
                 name: name,
                 privateKey: privateKey.startsWith("0x") ? privateKey : ("0x" + privateKey),
                 publicKey: publicKey.startsWith("0x") ? publicKey : ("0x" + publicKey),
-                derivedAccountNum: -1 // -1 means it is not derived from seed phrase
+                derivedAccountNum: -1 // -1 means it is not derived from seed phrase and is imported
             });
 
             const hashedKey = this.encryptString(str);
@@ -474,7 +485,7 @@ export class Hashed {
 
     public addWatchAccount(name: string, publicKey: string): boolean {
         try {
-            
+
             const newAccount: Account = {
                 name: name,
                 publicKey: publicKey,
@@ -585,7 +596,7 @@ export class Hashed {
 
     public changePassword(password: string): boolean {
         try {
-            
+
             this.password = password;
 
             return true;
@@ -596,16 +607,71 @@ export class Hashed {
         }
     }
 
-    // <------------------ NETWORK ------------------>
+    public async signTransaction(to: string, amount: string): Promise<{ done: boolean, receipt?: TransactionReceipt | null }> {
+        try {
 
-    public setSelectedNetwork(name: string, RPC: string): void {
-        this.selectedNetwork = {
-            name: name,
-            RPC: RPC
+            if (!this.selectedNetwork) return { done: false };
+
+            if (!this.selectedAccount || !this.selectedAccount.privateKey) return { done: false };
+
+            const RPC_URL = RPC[this.selectedNetwork];
+            const API_KEY = import.meta.env.VITE_ALCHEMY_API_KEY;
+
+            const provider = new JsonRpcProvider(`${RPC_URL}${API_KEY}`);
+
+            const wallet = new Wallet(this.selectedAccount.privateKey, provider);
+
+            const tx = {
+                to: to,
+                value: parseEther(amount),
+                gasLimit: 21000,
+                maxFeePerGas: parseUnits("30", "gwei"),
+                maxPriorityFeePerGas: parseUnits("2", "gwei")
+            };
+
+            const response = await wallet.sendTransaction(tx);
+            const receipt = await response.wait();
+
+            return { done: true, receipt: receipt };
+
+        } catch (error) {
+            this.showPanel("Transaction failed!", "error");
+            return { done: false };
         }
     }
 
-    public getSelectedNetwork(): NetworkType | null {
+    public changeNetwork(network: Networks): boolean {
+        try {
+
+            chrome.storage.local.set({ network });
+
+            return true;
+
+        } catch (error) {
+            this.showPanel("Failed to change network", "error");
+            return false;
+        }
+    }
+
+    // <------------------ NETWORK ------------------>
+
+
+    public setSelectedNetwork() {
+        try {
+
+            chrome.storage.local.get("network", (data) => {
+                this.selectedNetwork = data.network;
+                console.log("data.network: ", data.network);
+                console.log("selected network: ", this.selectedNetwork);
+            });
+
+        } catch (error) {
+            this.showPanel("failed to set network", "error");
+            return;
+        }
+    }
+
+    public getSelectedNetwork(): Networks | null {
         return this.selectedNetwork;
     }
 
@@ -664,7 +730,7 @@ export class Hashed {
         return `m/44'/60'/0'/0/${this.currentSeedAccount}`;
     }
 
-    private setCurrentSeedIndex() { // this will be used to set current seed account number to derive accounts further
+    private setCurrentSeedIndex(): void { // this will be used to set current seed account number to derive accounts further
         let highestValue: number = 0;
 
         this.accounts.map((acc) => {
@@ -677,34 +743,47 @@ export class Hashed {
 
     }
 
-    public async setBalanceOfCurrentAccount() {
+    public async setBalanceOfCurrentAccount(): Promise<{ token: string, USD: string } | null> {
+        try {
 
-        const address = this.selectedAccount;
+            console.log("selected account: ", this.selectedAccount);
+            console.log("selected network: ", this.selectedNetwork);
 
-        const data = {
-            jsonrpc: "2.0",
-            method: "eth_getBalance",
-            params: [address, "latest"],
-            id: 1
-        };
+            if (!this.selectedNetwork) return null;
 
-        const res = await axios.post("https://cloudflare-eth.com", data, {
-            headers: {
-                "Content-Type": "application/json"
-            }
-        });
+            if (!this.selectedAccount || !this.selectedAccount.privateKey) return null;
 
-        const weiHex = await res.data.result;
-        const wei = BigInt(weiHex);
-        const eth = Number(wei) / 1e18;
+            const RPC_URL = RPC[this.selectedNetwork];
+            const API_KEY = import.meta.env.VITE_ALCHEMY_API_KEY;
 
-        this.selectedAccountBalance = eth;
+            const provider = new JsonRpcProvider(`${RPC_URL}${API_KEY}`);
 
-        return eth;
+            console.log("provider: ", provider);
 
+            const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd");
+            const valueOfETHinUSD = (await res.json()).ethereum.usd;
+
+            const balanceWEI = await provider.getBalance(this.selectedAccount.publicKey);
+            const balanceETH = formatEther(balanceWEI);
+            const balanceUSD = (Number(valueOfETHinUSD) * Number(valueOfETHinUSD)).toString();
+
+            console.log("balance in WEI: ", balanceWEI);
+            console.log("balance in ETH: ", balanceETH);
+
+            this.selectedAccountBalance = {
+                token: balanceETH,
+                USD: balanceUSD
+            };
+
+            return { token: balanceETH, USD: balanceUSD };
+
+        } catch (error) {
+            this.showPanel("failed to fetch balance", "error");
+            return null;
+        }
     }
 
-    public getBalanceofCurrentAccount() {
+    public getBalanceofCurrentAccount(): { token: string, USD: string } {
         return this.selectedAccountBalance;
     }
 

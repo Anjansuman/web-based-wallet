@@ -3,6 +3,7 @@ import gsap from "gsap";
 import React, { useEffect, useRef, useState } from "react";
 import { usePopUp } from "../../../../context/PopUpPanelContext";
 import { useHashed } from "../../../../context/HashedAtom";
+import type { Account } from "../../../../types/AccountType";
 
 interface SideBarProps {
     ref?: React.Ref<HTMLDivElement>
@@ -77,7 +78,7 @@ export default function SideBar({ ref, close, addAccount, editAccounts, settings
         }
     }, []);
 
-    const handleClose = () => {
+    const onClose = () => {
         if (!barRef.current) return;
 
         gsap.to(barRef.current, {
@@ -88,6 +89,14 @@ export default function SideBar({ ref, close, addAccount, editAccounts, settings
                 close()
             }
         });
+    }
+
+    const handleAccountClick = (acc: Account) => {
+        if(!hashed) return;
+
+        hashed.setSelectedAccount(acc);
+        onClose();
+
     }
 
     if (hashed === null || hashed?.getAccounts === null) return null;
@@ -101,7 +110,7 @@ export default function SideBar({ ref, close, addAccount, editAccounts, settings
                 <div className="flex flex-col justify-start items-center gap-y-3 ">
                     <div
                         className="hover:bg-white transition-colors p-1 rounded-sm cursor-pointer"
-                        onClick={handleClose}
+                        onClick={onClose}
                     >
                         <IconArrowLeft className="hover:text-black" />
                     </div>
@@ -111,6 +120,7 @@ export default function SideBar({ ref, close, addAccount, editAccounts, settings
                             className="flex flex-col justify-center items-center cursor-pointer"
                             onMouseEnter={(e) => handleHover(e, acc.name, acc.publicKey)}
                             onMouseLeave={handleMouseLeave}
+                            onClick={() => handleAccountClick(acc)}
                         >
                             <div className="h-10 w-10 rounded-full bg-white flex justify-center items-center text-center">
                                 {acc.name.charAt(0)}

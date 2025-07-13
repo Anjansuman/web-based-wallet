@@ -21,20 +21,26 @@ export default function Dashboard() {
     const [accountPanel, setAccountPanel] = useState<"receive" | "send" | "swap" | "buy" | null>(null);
     const [walletPanel, setWalletPanel] = useState<"add" | "edit" | "settings" | null>(null);
 
-    const [balance, setBalance] = useState<number>(12); // 12 is set for testing cause i have 0 eth
+    const [balance, setBalance] = useState<{ token: string, USD: string }>({ token: "0", USD: "0" });
 
     const { hashed } = useHashed();
 
     useEffect(() => {
         if (!hashed) return;
 
-        // const getValue = async () => {
-        //     const value = await hashed.setBalanceOfCurrentAccount();
-        //     setBalance(value);
-        //     return value
-        // }
-        // getValue();
-        setBalance(0);
+        const getValue = async () => {
+            const values = await hashed.setBalanceOfCurrentAccount();
+            if(values) {
+                setBalance(values);
+            } else {
+                // handle the error
+            }
+        }
+        getValue();
+        // const ctx = setInterval(() => getValue(), 5000);
+        const repeatFetch = setInterval(() => getValue(), 4000);
+
+        return () => clearInterval(repeatFetch);
 
     }, [hashed]);
 
@@ -72,7 +78,7 @@ export default function Dashboard() {
             }
             <BottomBar />
             <div className="w-full px-3 mt-[70px] flex flex-col items-center gap-y-3 ">
-                <Value amount={balance} currency={"ETH"} USD={92.31} />
+                <Value amount={balance.token} currency={"ETH"} USD={balance.USD} />
                 <ActionButtons
                     receive={() => {
                         setSideBar(false);
