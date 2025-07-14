@@ -24,19 +24,19 @@ export const AddWatchAccount = ({ close }: ReceiveProps) => {
     const [accountName, setAccountName] = useState<string | null>(null);
     const [publicKey, setPublicKey] = useState<string | null>(null);
 
-    const [wrongPublicKey, setWrontPublicKey] = useState<boolean>(false);
+    const [wrongPublicKey, setWrongPublicKey] = useState<boolean>(false);
 
     const publicKeyCheck = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         try {
-            setWrontPublicKey(false);
+            setWrongPublicKey(false);
             if(!isAddress(e.target.value)) {
-                setWrontPublicKey(true);
+                setWrongPublicKey(true);
             } else {
                 setPublicKey(e.target.value);
-                setWrontPublicKey(false);
+                setWrongPublicKey(false);
             }
         } catch (error) {
-            setWrontPublicKey(true);
+            setWrongPublicKey(true);
         }
     }
 

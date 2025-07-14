@@ -2,7 +2,7 @@ import { IconLoader } from "@tabler/icons-react"
 
 interface ButtonProps {
     content: React.ReactNode,
-    onClick: () => void,
+    onClick?: () => void,
     colored?: boolean,
     disabled?:boolean,
     loader?: boolean

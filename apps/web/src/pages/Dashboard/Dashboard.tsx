@@ -21,7 +21,7 @@ export default function Dashboard() {
     const [accountPanel, setAccountPanel] = useState<"receive" | "send" | "swap" | "buy" | null>(null);
     const [walletPanel, setWalletPanel] = useState<"add" | "edit" | "settings" | null>(null);
 
-    const [balance, setBalance] = useState<{ token: string, USD: string }>({ token: "0", USD: "0" });
+    const [balance, setBalance] = useState<{ token: string, USD: string }>({ token: "0.0", USD: "0.0" });
 
     const { hashed } = useHashed();
 

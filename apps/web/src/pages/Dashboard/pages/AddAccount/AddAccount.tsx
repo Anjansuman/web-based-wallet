@@ -3,11 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import { useHashed } from '../../../../context/HashedAtom';
 import Button from '../../../../components/ui/Button';
 import gsap from 'gsap';
-import { IconBracketsContain, IconDownload, IconEye, IconPlus } from "@tabler/icons-react";
+import { IconBracketsContain, IconDownload, IconEye, IconNotebook, IconPlus } from "@tabler/icons-react";
 import { GrayButton } from "../../../../components/ui/GrayButton";
 import { AddNewAccount } from "./AddNewAccount";
-import { ImportAccount } from "./ImportAccount";
-import { AddWatchAccount } from "./AddWatchAccount";
+import { SavedAddresses } from "./SavedAddresses";
+import { GeneralisedAddExistedAccount } from "./GeneralisedAddExistedAccount";
 
 
 interface ReceiveProps {
@@ -21,7 +21,7 @@ export const AddAccount = ({ close }: ReceiveProps) => {
     const panelRef = useRef<HTMLDivElement>(null);
 
 
-    const [newAccountPanel, setNewAccountPanel] = useState<"newAccount" | "newRecoveryPhrase" | "importAccount" | "watchAddress" | null>(null);
+    const [newAccountPanel, setNewAccountPanel] = useState<"newAccount" | "newRecoveryPhrase" | "importAccount" | "watchAddress" | "savedAddresses" | null>(null);
 
     useEffect(() => {
 
@@ -59,6 +59,7 @@ export const AddAccount = ({ close }: ReceiveProps) => {
         else if (index === 1) setNewAccountPanel("newRecoveryPhrase");
         else if (index === 2) setNewAccountPanel("importAccount");
         else if (index === 3) setNewAccountPanel("watchAddress");
+        else if (index === 4) setNewAccountPanel("savedAddresses");
     }
 
     return <div className="h-full w-full absolute z-50 top-[0] left-0 flex justify-start items-start ">
@@ -105,8 +106,9 @@ export const AddAccount = ({ close }: ReceiveProps) => {
         
         {newAccountPanel === "newAccount" && <AddNewAccount close={() => setNewAccountPanel(null)} />}
         {newAccountPanel === "newRecoveryPhrase" && <AddNewAccount close={() => setNewAccountPanel(null)} />}
-        {newAccountPanel === "importAccount" && <ImportAccount close={() => setNewAccountPanel(null)} />}
-        {newAccountPanel === "watchAddress" && <AddWatchAccount close={() => setNewAccountPanel(null)} />}
+        {newAccountPanel === "importAccount" && <GeneralisedAddExistedAccount type={"import"} close={() => setNewAccountPanel(null)} />}
+        {newAccountPanel === "watchAddress" && <GeneralisedAddExistedAccount type={"watch"} close={() => setNewAccountPanel(null)} />}
+        {newAccountPanel === "savedAddresses" && <SavedAddresses close={() => setNewAccountPanel(null)} />}
         
     </div>
 }
@@ -139,6 +141,11 @@ export const contentArray = () => {
             logo: <IconEye />,
             title: "Watch Address",
             description: "Track any public wallet address"
+        },
+        {
+            logo: <IconNotebook />,
+            title: "Saved Addresses",
+            description: "All of your saved addresses"
         }
     ];
 

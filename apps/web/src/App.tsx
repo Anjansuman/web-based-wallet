@@ -1,5 +1,79 @@
 /// <reference types="chrome" />
 
+import { useState, useEffect, Suspense, lazy } from "react";
+import image from "../public/images/logo.png";
+
+type Stage = "loading" | "import" | "setPassword" | "unlock" | "dashboard";
+
+const Seed = lazy(() => import("./pages/Seed/Seed"));
+const SetPassword = lazy(() => import("./pages/Password/SetPassword"));
+const UnlockWallet = lazy(() => import("./pages/Password/UnlockWallet"));
+const Dashboard = lazy(() => import("./pages/Dashboard/Dashboard"));
+
+
+export default function App() {
+    const [stage, setStage] = useState<Stage>("loading");
+    const [tempMnemonic, setTempMnemonic] = useState<string | null>(null);
+
+    useEffect(() => {
+        chrome.storage.local.get("vault", (data) => {
+            data.vault ? setStage("unlock") : setStage("import");
+        });
+    }, []);
+
+    if (stage === "loading") return null;
+
+    return (
+        <>
+            {stage === "import" && (
+                <Suspense fallback={<PageLoader />}>
+                    <Seed
+                        onComplete={(mnemonic) => {
+                            setTempMnemonic(mnemonic);
+                            setStage("setPassword");
+                        }}
+                    />
+                </Suspense>
+            )}
+
+            {stage === "setPassword" && tempMnemonic && (
+                <Suspense fallback={<PageLoader />}>
+                    <SetPassword
+                        mnemonic={tempMnemonic}
+                        onComplete={() => setStage("dashboard")}
+                    />
+                </Suspense>
+            )}
+
+            {stage === "unlock" && (
+                <Suspense fallback={<PageLoader />}>
+                    <UnlockWallet onUnlock={() => setStage("dashboard")} />
+                </Suspense>
+            )}
+
+            {stage === "dashboard" && (
+                <Suspense fallback={<PageLoader />}>
+                    <Dashboard />
+                </Suspense>
+            )}
+        </>
+    );
+}
+
+
+const PageLoader = () => {
+    return <div className="w-full h-full flex justify-center items-center ">
+        <img src={image} alt="logo" className="size-30 " />
+    </div>
+}
+
+
+// this page doesn't support lazy loader
+
+/*
+
+/// <reference types="chrome" />
+
 import { useState } from "react";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import { useEffect } from "react";
@@ -43,3 +117,5 @@ function App() {
 }
 
 export default App;
+
+*/

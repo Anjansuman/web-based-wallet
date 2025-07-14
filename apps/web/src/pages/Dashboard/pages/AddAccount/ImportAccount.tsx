@@ -87,7 +87,7 @@ export const ImportAccount = ({ close }: ReceiveProps) => {
             ref={panelRef}
         >
             <div className="w-full flex justify-center items-center p-3 shadow-md text-base font-semibold ">
-                Add a new wallet
+                Import a wallet
             </div>
 
             <div className="w-full h-full pt-6 flex flex-col justify-start items-center gap-y-6 overflow-x-hidden overflow-y-auto [::-webkit-scrollbar]:hidden [scrollbar-width:none] ">

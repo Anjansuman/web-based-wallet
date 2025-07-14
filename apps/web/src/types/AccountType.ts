@@ -22,3 +22,8 @@ export interface KeyPair {
     privateKey: string,
     publicKey: string
 }
+
+export interface SavedAddress {
+    name: string,
+    publicKey: string
+}

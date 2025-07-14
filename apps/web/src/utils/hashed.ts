@@ -1,7 +1,7 @@
 import crypto from "crypto-js";
 import { HDNodeWallet, Wallet, Mnemonic, parseEther, parseUnits, formatEther } from "ethers";
 
-import type { Account, AccountType2, KeyPair } from "../types/AccountType";
+import type { Account, AccountType2, KeyPair, SavedAddress } from "../types/AccountType";
 import { Networks, RPC } from "./rpcURLs";
 import { JsonRpcProvider } from "ethers";
 import type { TransactionReceipt } from "ethers";
@@ -18,6 +18,7 @@ export class Hashed {
     private password: string = "";
 
     private accounts: Account[] = [];
+    private savedAddresses: SavedAddress[] = [];
 
     private currentSeedAccount: number = 0;
 
@@ -182,7 +183,7 @@ export class Hashed {
             return;
         }
 
-        if(!this.accounts.some((account) => account === acc)) {
+        if (!this.accounts.some((account) => account === acc)) {
             this.showPanel("Unable to set accounts", "error");
             return;
         }
@@ -311,6 +312,7 @@ export class Hashed {
         this.setSelectedAccount(this.accounts[0]);
         this.setCurrentSeedIndex();
         this.setSelectedNetwork();
+        this.setSavedAddress();
 
         return true;
     }
@@ -519,6 +521,94 @@ export class Hashed {
 
         } catch (error) {
             this.showPanel("failed to add watch address", "error");
+            return false;
+        }
+    }
+
+    public addSavedAddress(name: string, publicKey: string): boolean {
+        try {
+
+            if(this.savedAddresses.some((addr) => addr.name === name)) {
+                this.showPanel("account with this name already exists!", "error");
+                return false;
+            }
+
+            if(this.savedAddresses.some((addr) => addr.publicKey === publicKey)) {
+                this.showPanel("account with this publicKey already exists!", "error");
+                return false;
+            }
+
+            const hashedPublicKey = this.encryptString(publicKey);
+
+            const str: SavedAddress = {
+                name,
+                publicKey: hashedPublicKey
+            };
+
+            chrome.storage.local.get(["saved"], (data) => {
+                const saved: SavedAddress[] = data.saved || [];
+
+                saved.push(str);
+
+                chrome.storage.local.set({ saved: saved });
+
+                this.savedAddresses.push(str); // Optional: if you want in-memory cache too
+            });
+
+            return true;
+
+        } catch (error) {
+            this.showPanel("Failed to save the address", "error");
+            return false;
+        }
+    }
+
+    public deleteSavedAddress(name: string, publicKey: string): boolean {
+        try {
+
+            if(!this.savedAddresses) {
+                this.showPanel("No saved addresses found", "error");
+                return false;
+            }
+
+            const addressIndex = this.savedAddresses.findIndex((acc) => (acc.name === name && acc.publicKey === publicKey));
+            console.log("index: ", addressIndex);
+            if(!addressIndex) {
+                this.showPanel("saved address with these details doesn't exist", "error");
+                return false;
+            }
+
+            let updatedAccounts: SavedAddress[] = [];
+
+            this.savedAddresses.map((acc) => {
+                if(acc.name !== name && acc.publicKey !== publicKey) {
+                    updatedAccounts.push(acc);
+                }
+            });
+
+            this.savedAddresses = updatedAccounts;
+            console.log("saved addresses: ", this.savedAddresses);
+
+            chrome.storage.local.get("saved", (data) => {
+                let saved: SavedAddress[] = data.saved;
+
+                const updatedAddresses: SavedAddress[] = saved.filter((acc, index) => {
+                    if(index !== addressIndex) {
+                        return acc;
+                    }
+                });
+
+                if(!updatedAddresses) return false;
+
+                saved = updatedAddresses;
+                chrome.storage.local.set({ saved });
+
+            });
+
+            return true;
+            
+        } catch (error) {
+            this.showPanel("failed to delete the saved address", "error");
             return false;
         }
     }
@@ -746,9 +836,6 @@ export class Hashed {
     public async setBalanceOfCurrentAccount(): Promise<{ token: string, USD: string } | null> {
         try {
 
-            console.log("selected account: ", this.selectedAccount);
-            console.log("selected network: ", this.selectedNetwork);
-
             if (!this.selectedNetwork) return null;
 
             if (!this.selectedAccount || !this.selectedAccount.privateKey) return null;
@@ -757,8 +844,6 @@ export class Hashed {
             const API_KEY = import.meta.env.VITE_ALCHEMY_API_KEY;
 
             const provider = new JsonRpcProvider(`${RPC_URL}${API_KEY}`);
-
-            console.log("provider: ", provider);
 
             const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd");
             const valueOfETHinUSD = (await res.json()).ethereum.usd;
@@ -769,6 +854,7 @@ export class Hashed {
 
             console.log("balance in WEI: ", balanceWEI);
             console.log("balance in ETH: ", balanceETH);
+            console.log("balance in USD: ", balanceUSD);
 
             this.selectedAccountBalance = {
                 token: balanceETH,
@@ -785,6 +871,29 @@ export class Hashed {
 
     public getBalanceofCurrentAccount(): { token: string, USD: string } {
         return this.selectedAccountBalance;
+    }
+
+    public setSavedAddress(): void {
+        chrome.storage.local.get("saved", (data) => {
+            const saved: SavedAddress[] = data.saved;
+
+            saved.map((acc) => {
+                const publicKey = this.decryptString(acc.publicKey);
+                this.savedAddresses.push({
+                    name: acc.name,
+                    publicKey: publicKey
+                });
+            });
+        })
+    }
+
+    public getSavedAddress(): SavedAddress[] {
+        return this.savedAddresses;
+    }
+
+    public shortenAddress(address: string): string {
+        const shortAddress = address.slice(0, 12) + "..." + address.slice(-4);
+        return shortAddress;
     }
 
 }

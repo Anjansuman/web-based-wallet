@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useHashed } from '../../../context/HashedAtom';
 import Button from '../../../components/ui/Button';
 import gsap from 'gsap';
@@ -16,6 +16,8 @@ export const Send = ({ close }: ReceiveProps) => {
 
     const { hashed } = useHashed();
     const panelRef = useRef<HTMLDivElement>(null);
+
+    const [balance, setBalance] = useState<string>("");
 
     useEffect(() => {
 
@@ -43,6 +45,10 @@ export const Send = ({ close }: ReceiveProps) => {
     }
 
     useEffect(() => {
+        if (!hashed) return;
+
+        const value = hashed.getBalanceofCurrentAccount().token;
+        setBalance(value);
 
     }, [hashed]);
 
@@ -71,7 +77,10 @@ export const Send = ({ close }: ReceiveProps) => {
                     <Input
                         placeholder="Recepient's Ethereum address"
                     />
-                    <div className="w-9 min-h-9 px-1 text-white text-base rounded-full flex justify-center items-center bg-[#262626] cursor-pointer ">
+                    <div
+                        className="w-9 min-h-9 px-1 text-white text-base rounded-full flex justify-center items-center bg-[#262626] cursor-pointer "
+                        onClick={() => {}}
+                    >
                         @
                     </div>
                 </div>
@@ -94,7 +103,7 @@ export const Send = ({ close }: ReceiveProps) => {
 
                 <div className="w-full flex justify-end items-center ">
                     <div className="text-sm ">
-                        Available 0 ETH
+                        Available {balance} ETH
                     </div>
                 </div>
 

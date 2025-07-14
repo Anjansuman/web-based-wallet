@@ -1,13 +1,14 @@
 import React, { useRef, useState } from "react";
 
 interface InputProps {
-  className?: string;
-  type?: "text" | "password";
-  placeholder: string;
-  error?: boolean;
+  className?: string,
+  type?: "text" | "password",
+  placeholder: string,
+  error?: boolean,
   ref?: React.Ref<HTMLTextAreaElement>
-  onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void,
+  onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void,
+  value?: string
 }
 
 export const TextArea = ({
@@ -18,6 +19,7 @@ export const TextArea = ({
   ref,
   onChange,
   onKeyDown,
+  value
 }: InputProps) => {
 
   const [maskedValue, setMaskedValue] = useState("");
@@ -55,7 +57,9 @@ export const TextArea = ({
           text-base text-white rounded-xl p-4 bg-[#1e1e1e] 
           border ${error ? "border-red-500" : "border-transparent"}
         `}
-      />
+      >
+        {value}
+      </textarea>
     </div>
   );
 };
