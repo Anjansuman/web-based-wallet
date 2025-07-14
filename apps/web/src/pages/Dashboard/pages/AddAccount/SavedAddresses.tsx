@@ -24,6 +24,9 @@ export const SavedAddresses = ({ close }: ReceiveProps) => {
     const [newAddressPanel, setNewAddressPanel] = useState<boolean>(false);
     const [savedAddressDetails, SetSavedAddressDetails] = useState<{ name: string, publicKey: string } | null>(null);
 
+    const searchRef = useRef<HTMLInputElement>(null);
+    const [searchQuery, setSearchQuery] = useState<string>("");
+
     useEffect(() => {
 
         if (!panelRef.current) return;
@@ -56,6 +59,15 @@ export const SavedAddresses = ({ close }: ReceiveProps) => {
         setSavedAddresses(saved);
     }, [hashed]);
 
+    const filteredAddresses = savedAddresses?.filter((detail) => {
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase();
+        return (
+            detail.name.toLowerCase().includes(q) ||
+            detail.publicKey.toLowerCase().includes(q)
+        );
+    });
+
     return <div className="h-full w-full absolute z-50 top-[0] left-0 flex justify-start items-start ">
         <div
             className="w-full h-[600px] bg-neutral-900 flex flex-col justify-between items-center p-3 "
@@ -67,7 +79,7 @@ export const SavedAddresses = ({ close }: ReceiveProps) => {
 
             <div className="w-full h-full pt-2 flex flex-col justify-start items-center gap-y-2 inset-shadow-md overflow-x-hidden overflow-y-auto [::-webkit-scrollbar]:hidden [scrollbar-width:none] ">
 
-                {savedAddresses?.map((detail, index) => (
+                {filteredAddresses?.map((detail, index) => (
                     <GrayButton
                         className={"flex justify-start items-center gap-x-3 "}
                         key={index}
@@ -111,7 +123,8 @@ export const SavedAddresses = ({ close }: ReceiveProps) => {
 
                 <Input
                     placeholder="Search..."
-
+                    ref={searchRef}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                 />
 
                 <div className="w-full flex justify-center items-center gap-x-2 ">

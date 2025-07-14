@@ -88,6 +88,13 @@ export const GeneralisedAddExistedAccount = ({ close, type, nameValue, keyValue 
         } else {
             // Show error or fallback
         }
+    };
+
+    const handleDisableButton: () => boolean = () => {
+        if(keyValue) return false;
+
+        return keyInvalid || !accountName || !key;
+
     }
 
     const onClose = () => {
@@ -154,7 +161,7 @@ export const GeneralisedAddExistedAccount = ({ close, type, nameValue, keyValue 
                         content={keyValue ? "Save" : "Create"}
                         onClick={handleCreate}
                         colored
-                        disabled={keyInvalid || !accountName || !key}
+                        disabled={handleDisableButton()}
                     />
                 </div>
             </div>

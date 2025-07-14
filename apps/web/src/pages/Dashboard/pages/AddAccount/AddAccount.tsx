@@ -73,7 +73,7 @@ export const AddAccount = ({ close }: ReceiveProps) => {
 
             <div className="w-full h-full overflow-x-hidden overflow-y-auto [::-webkit-scrollbar]:hidden [scrollbar-width:none] ">
 
-                <div className="w-full h-full flex flex-col justify-start items-center p-2 gap-y-2">
+                <div className="w-full h-full flex flex-col justify-start items-center pt-2 gap-y-2">
                     {contentArray()?.map((detail, index) => (
                         <GrayButton
                             className={"flex justify-start items-center gap-x-3 "}

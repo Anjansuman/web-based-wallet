@@ -528,12 +528,12 @@ export class Hashed {
     public addSavedAddress(name: string, publicKey: string): boolean {
         try {
 
-            if(this.savedAddresses.some((addr) => addr.name === name)) {
+            if (this.savedAddresses.some((addr) => addr.name === name)) {
                 this.showPanel("account with this name already exists!", "error");
                 return false;
             }
 
-            if(this.savedAddresses.some((addr) => addr.publicKey === publicKey)) {
+            if (this.savedAddresses.some((addr) => addr.publicKey === publicKey)) {
                 this.showPanel("account with this publicKey already exists!", "error");
                 return false;
             }
@@ -552,7 +552,10 @@ export class Hashed {
 
                 chrome.storage.local.set({ saved: saved });
 
-                this.savedAddresses.push(str); // Optional: if you want in-memory cache too
+                this.savedAddresses.push({
+                    name: name,
+                    publicKey: publicKey
+                }); // Optional: if you want in-memory cache too
             });
 
             return true;
@@ -563,25 +566,53 @@ export class Hashed {
         }
     }
 
+    public updateSavedAddress(accIndex: number, name?: string, publicKey?: string): boolean {
+        try {
+            if (accIndex < 0 || accIndex >= this.savedAddresses.length) {
+                this.showPanel("Invalid saved address", "error");
+                return false;
+            }
+
+            if (name) this.savedAddresses[accIndex].name = name;
+            if (publicKey) this.savedAddresses[accIndex].publicKey = publicKey;
+
+            chrome.storage.local.get(["saved"], (data) => {
+                const saved: SavedAddress[] = data.saved || [];
+
+                if (accIndex >= saved.length) {
+                    this.showPanel("Saved address index out of bounds", "error");
+                    return;
+                }
+
+                if (name) saved[accIndex].name = name;
+                if (publicKey) saved[accIndex].publicKey = this.encryptString(publicKey);
+
+                chrome.storage.local.set({ saved });
+            });
+
+            return true;
+
+        } catch (error) {
+            this.showPanel("Failed to update the saved address", "error");
+            return false;
+        }
+    }
+
     public deleteSavedAddress(name: string, publicKey: string): boolean {
         try {
 
-            if(!this.savedAddresses) {
+            if (!this.savedAddresses) {
                 this.showPanel("No saved addresses found", "error");
                 return false;
             }
 
             const addressIndex = this.savedAddresses.findIndex((acc) => (acc.name === name && acc.publicKey === publicKey));
             console.log("index: ", addressIndex);
-            if(!addressIndex) {
-                this.showPanel("saved address with these details doesn't exist", "error");
-                return false;
-            }
 
             let updatedAccounts: SavedAddress[] = [];
 
             this.savedAddresses.map((acc) => {
-                if(acc.name !== name && acc.publicKey !== publicKey) {
+                if (acc.name !== name && acc.publicKey !== publicKey) {
                     updatedAccounts.push(acc);
                 }
             });
@@ -593,12 +624,12 @@ export class Hashed {
                 let saved: SavedAddress[] = data.saved;
 
                 const updatedAddresses: SavedAddress[] = saved.filter((acc, index) => {
-                    if(index !== addressIndex) {
+                    if (index !== addressIndex) {
                         return acc;
                     }
                 });
 
-                if(!updatedAddresses) return false;
+                if (!updatedAddresses) return false;
 
                 saved = updatedAddresses;
                 chrome.storage.local.set({ saved });
@@ -606,7 +637,7 @@ export class Hashed {
             });
 
             return true;
-            
+
         } catch (error) {
             this.showPanel("failed to delete the saved address", "error");
             return false;
