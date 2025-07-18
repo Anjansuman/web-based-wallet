@@ -1,6 +1,5 @@
-import { IconChevronCompactDown } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import NetworkTab from "../NetworkTab/NetworkTab";
+import { NetworkTab } from "../NetworkTab/NetworkTab";
 import { useHashed } from "../../../../context/HashedAtom";
 
 interface NavBarProps {
@@ -31,13 +30,12 @@ export const NavBar = ({ sideBar }: NavBarProps) => {
             </div>
             <div>Account 1</div>
             <div
-                className="h-5 w-8 bg-red-400 rounded-full p-1 flex justify-center items-center "
+                className="h-5 w-8 bg-red-400 rounded-full p-2 flex justify-center items-center gap-x-2 "
                 onClick={() => setNetworkTab(true)}
             >
-                <div className="h-4 w-4 rounded-full bg-gray-700 text-white text-[10px] flex justify-center items-center ">
+                <div className="h-4 w-4 p-1 rounded-full bg-gray-700 text-white text-[10px] flex justify-center items-center cursor-pointer ">
                     a
                 </div>
-                <IconChevronCompactDown className="size-3" />
                 {
                     networkTab && <NetworkTab close={() => setNetworkTab(false)} />
                 }

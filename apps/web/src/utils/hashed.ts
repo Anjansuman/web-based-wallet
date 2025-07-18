@@ -880,7 +880,7 @@ export class Hashed {
             const valueOfETHinUSD = (await res.json()).ethereum.usd;
 
             const balanceWEI = await provider.getBalance(this.selectedAccount.publicKey);
-            const balanceETH = formatEther(balanceWEI);
+            const balanceETH = formatEther(balanceWEI).substring(0, 6);
             const balanceUSD = (Number(valueOfETHinUSD) * Number(valueOfETHinUSD)).toString();
 
             console.log("balance in WEI: ", balanceWEI);

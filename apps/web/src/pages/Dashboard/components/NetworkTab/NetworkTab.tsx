@@ -1,76 +1,186 @@
-import { IconPlus, IconX } from "@tabler/icons-react";
-import { Networks, RPC } from "../../../../utils/rpcURLs";
-import { useCurrent } from "../../../../context/Zustand";
-import { usePopUp } from "../../../../context/PopUpPanelContext";
-import { useEffect } from "react";
 
-interface NetworkTabProps {
-    close: () => void
+import { useEffect, useRef, useState } from "react";
+import { useHashed } from '../../../../context/HashedAtom';
+import Button from '../../../../components/ui/Button';
+import gsap from 'gsap';
+import { GrayButton } from "../../../../components/ui/GrayButton";
+import { EthereumLogo } from "../../../../components/SVGs/EthereumLogo";
+import { SolanaLogo } from "../../../../components/SVGs/SolanaLogo";
+import { Networks } from "../../../../utils/rpcURLs";
+
+
+interface ReceiveProps {
+    close: () => void,
+
 }
 
-export default function NetworkTab({ close }: NetworkTabProps) {
+export const NetworkTab = ({ close }: ReceiveProps) => {
 
-    const { setNetwork } = useCurrent();
-    const { showPanel } = usePopUp();
+    const { hashed } = useHashed();
+    const panelRef = useRef<HTMLDivElement>(null);
+    const [selectedNetwork, setSelectedNetwork] = useState<Networks | null>(null);
 
-    const networkHandler = (network: Networks) => {
-
-        const rpc = RPC[network];
-        if(!rpc) {
-            showPanel("unable to access RPC url of: " + network, "error");
-            return;
-        }
-        setNetwork(rpc);
-    }
-
-    // this is just for time being, cause of testing problem
     useEffect(() => {
-        networkHandler(Networks.Ethereum_Mainnet);
+
+        if (!panelRef.current) return;
+
+        gsap.from(panelRef.current, {
+            x: 360,
+            duration: 0.4,
+            ease: "power2.inOut"
+        });
+
     }, []);
 
-    return <div className="h-screen w-full absolute z-50 top-0 left-0 backdrop-blur-[1px] flex justify-start items-center p-2">
-        <div className="h-full w-full py-4 bg-black rounded-xl flex flex-col justify-start items-center ">
-            <div className="w-full flex justify-between items-center border-b-[1px] sticky py-2 px-4 ">
-                <div></div>
-                <div className="text-lg text-white font-semibold ">
-                    Select a network
-                </div>
-                <div onClick={close}>
-                    <IconX className="p-1 hover:bg-gray-600 hover:text-red-500 transition-colors duration-200 rounded-sm cursor-pointer " />
-                </div>
+    const onClose = () => {
+        if (!panelRef.current) return;
+
+        gsap.to(panelRef.current, {
+            x: 360,
+            duration: 0.4,
+            ease: "power2.inOut",
+            onComplete: () => {
+                close()
+            }
+        });
+    }
+
+    const handleSelectNetwork = (network: Networks) => {
+        if (!hashed) return;
+
+        hashed.changeNetwork(network);
+        setSelectedNetwork(network);
+        // onClose();
+    }
+
+    useEffect(() => {
+        if (!hashed) return;
+
+        const currNetwork = hashed.getSelectedNetwork();
+        setSelectedNetwork(currNetwork);
+
+    }, [hashed]);
+
+
+    return <div className="h-full w-full absolute z-50 top-[0] left-0 flex justify-start items-start ">
+        <div
+            className="w-full h-[600px] bg-neutral-900 flex flex-col justify-between items-center p-3 "
+            ref={panelRef}
+        >
+            <div className="w-full flex justify-center items-center p-3 shadow-md text-base font-semibold ">
+                Networks
             </div>
-            <div className="w-full flex flex-col justify-center items-start gap-y-2">
-                {/* {
-                    .map((network, index) => (
-                        <div
-                            className="w-full flex justify-between items-center rounded-md px-4 py-2 bg-black hover:bg-[#191919] transition-colors duration-200 ease-in-out "
+
+            <div className="w-full h-full overflow-x-hidden overflow-y-auto [::-webkit-scrollbar]:hidden [scrollbar-width:none] ">
+
+                <div className="w-full h-full flex flex-col justify-start items-center pt-2 gap-y-2">
+                    {contentArray("mainnet")?.map((detail, index) => (
+                        <GrayButton
+                            className={"flex justify-start items-center gap-x-3 "}
                             key={index}
-                            onClick={() => networkHandler(network)}
+                            onClick={() => handleSelectNetwork(detail.network)}
+                            selected={selectedNetwork === detail.network}
                         >
-                            <div className="flex justify-start items-center gap-x-2 ">
-                                <div className="h-6 w-6 text-xs text-white p-1 rounded-full bg-black border-[0.5px] border-white flex justify-center items-center ">
-                                    {network.charAt(0)}
+                            <div
+                                className={`rounded-full p-2 `}
+                                style={{
+                                    background: detail.bg || "#2e2e2e"
+                                }}
+                            >
+                                {detail.logo}
+                            </div>
+                            <div className="flex flex-col items-start justify-between ">
+                                <div className="">
+                                    {detail.title}
                                 </div>
-                                <div className="text-lg text-white ">
-                                    {network}
+                                <div className="text-xs font-normal italic text-neutral-400 ">
+                                    {detail.description}
                                 </div>
                             </div>
-                            <IconInfoSquareRounded className="size-4" />
-                        </div>
-                    ))
-                } */}
-                <div className="w-full flex justify-between items-center rounded-md py-2 bg-black hover:bg-[#191919] transition-colors duration-200 ease-in-out "                >
-                    <div className="flex justify-start items-center gap-x-2 ">
-                        <div className="h-6 w-6 text-xs text-white p-2 rounded-full bg-black border-[1px] border-white flex justify-center items-center ">
-                            C
-                        </div>
-                        <div className="text-lg text-white">
-                            Custom Network
-                        </div>
-                    </div>
-                    <IconPlus className="size-4" />
+                        </GrayButton>
+                    ))}
+                    {contentArray("devnet")?.map((detail, index) => (
+                        <GrayButton
+                            className={"flex justify-start items-center gap-x-3 "}
+                            key={index}
+                            onClick={() => handleSelectNetwork(detail.network)}
+                            selected={selectedNetwork === detail.network}
+                        >
+                            <div
+                                className={`rounded-full p-2 `}
+                                style={{
+                                    background: detail.bg || "#2e2e2e"
+                                }}
+                            >
+                                {detail.logo}
+                            </div>
+                            <div className="flex flex-col items-start justify-between ">
+                                <div className="">
+                                    {detail.title}
+                                </div>
+                                <div className="text-xs font-normal italic text-neutral-400 ">
+                                    {detail.description}
+                                </div>
+                            </div>
+                        </GrayButton>
+                    ))}
                 </div>
             </div>
+
+            <div className="w-full p-2 ">
+                <Button
+                    content={"Close"}
+                    onClick={onClose}
+                />
+            </div>
         </div>
+
     </div>
+}
+
+
+interface contentType {
+    logo: React.ReactNode,
+    bg?: string,
+    title: string,
+    description: string,
+    network: Networks
+}
+
+export const contentArray = (network: "mainnet" | "devnet") => {
+    const mainnet: contentType[] = [
+        {
+            logo: <EthereumLogo size={"24px"} />,
+            bg: "#ffffff",
+            title: "ETHEREUM",
+            description: "[ Mainnet ]",
+            network: Networks.Ethereum_Mainnet
+        },
+        {
+            logo: <SolanaLogo size={'24px'} />,
+            bg: "#000000",
+            title: "SOLANA",
+            description: "[ Mainnet ]",
+            network: Networks.Solana_Mainnet
+        }
+    ];
+
+    const devnet: contentType[] = [
+        {
+            logo: <EthereumLogo size={"24px"} />,
+            bg: "#ffffff",
+            title: "SEPOLIA",
+            description: "[ Testnet ]",
+            network: Networks.Sepolia_Testnet
+        },
+        {
+            logo: <SolanaLogo size={'24px'} />,
+            bg: "#000000",
+            title: "SOLANA",
+            description: "[ Devnet ]",
+            network: Networks.Solana_Testnet
+        }
+    ]
+
+    return network === "mainnet" ? mainnet : devnet;
 }
