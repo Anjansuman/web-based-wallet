@@ -16,6 +16,18 @@ export default function App() {
     const [tempMnemonic, setTempMnemonic] = useState<string | null>(null);
 
     useEffect(() => {
+        chrome.runtime.sendMessage({ type: "get_session" }, async (res) => {
+
+            const token = res.token;
+
+            if(token) {
+                setStage("dashboard");
+                return;
+            }
+            chrome.runtime.sendMessage({ type: "clear_session" });
+
+        })
+
         chrome.storage.local.get("vault", (data) => {
             data.vault ? setStage("unlock") : setStage("import");
         });

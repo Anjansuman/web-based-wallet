@@ -9,6 +9,9 @@
         "64": "images/logo.png",
         "128": "images/logo.png"
     },
+    "background": {
+        "service_worker": "utils/background.js"
+    },
     "action": {
         "default_popup": "index.html"
     },
