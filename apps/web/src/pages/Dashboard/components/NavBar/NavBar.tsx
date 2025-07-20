@@ -16,6 +16,8 @@ export const NavBar = ({ sideBar }: NavBarProps) => {
     useEffect(() => {
         if(!hashed) return;
 
+        console.log("hashed from navbar: ", hashed);
+
         const currentAccount = hashed.getSelectedAccount().name;
         setCurrAccount(currentAccount);
     }, []);

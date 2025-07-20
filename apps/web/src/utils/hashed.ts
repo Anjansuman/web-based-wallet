@@ -381,6 +381,8 @@ export class Hashed {
 
             chrome.storage.local.set({ accounts });
 
+            chrome.storage.local.set({ saved: null });
+
             return true;
 
         } catch (error) {
@@ -775,7 +777,6 @@ export class Hashed {
     }
 
     // <------------------ NETWORK ------------------>
-
 
     public setSelectedNetwork() {
         try {

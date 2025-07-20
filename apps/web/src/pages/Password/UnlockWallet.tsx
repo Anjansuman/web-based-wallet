@@ -24,7 +24,7 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
 
     const { showPanel } = usePopUp();
     // const { setAccounts } = useAccount();
-    const { hashed, setHashed } = useHashed();
+    const { setHashed } = useHashed();
 
     useEffect(() => {
         inputRef.current?.focus();
@@ -35,27 +35,25 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
 
             if (!password) return;
 
-                // setting up the class
-                const hashedClass = new Hashed(password);
-                setHashed(hashedClass);
-                console.log(hashed);
+            // setting up the class
+            const hashedClass = new Hashed(password);
+            setHashed(hashedClass);
 
-                const unlockWallet: boolean = await hashedClass.unlockWallet(password);
+            const unlockWallet: boolean = await hashedClass.unlockWallet(password);
 
-                if (!unlockWallet) {
-                    setError(true);
-                    return;
-                }
-                setError(false);
+            if (!unlockWallet) {
+                setError(true);
+                return;
+            }
+            setError(false);
 
-                console.log(password);
+            hashedClass.fetchChromeData("accounts");
+            onUnlock();
 
-                hashedClass.fetchChromeData("accounts");
-                console.log("ek or baar hashed: ", hashed);
-                onUnlock();
+            // set the background active for unlocking the wallet for 15 mins after closing
+            chrome.runtime.sendMessage({ type: "UNLOCK_WALLET", hashed: hashedClass });
 
         } catch (error) {
-            console.log(error);
             showPanel("Error occured while entering password", "error");
             return;
         }

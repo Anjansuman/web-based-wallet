@@ -10,14 +10,16 @@
         "128": "images/logo.png"
     },
     "background": {
-        "service_worker": "utils/background.js"
+        "service_worker": "background.js"
     },
     "action": {
         "default_popup": "index.html"
     },
     "permissions": [
         "storage",
-        "clipboardWrite"
+        "clipboardWrite",
+        "tabs",
+        "scripting"
     ],
     "host_permissions": [
         "<all_urls>"

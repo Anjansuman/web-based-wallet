@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense, lazy } from "react";
 import image from "../public/images/logo.png";
+import { useHashed } from "./context/HashedAtom";
 
 type Stage = "loading" | "import" | "setPassword" | "unlock" | "dashboard";
 
@@ -14,19 +15,17 @@ const Dashboard = lazy(() => import("./pages/Dashboard/Dashboard"));
 export default function App() {
     const [stage, setStage] = useState<Stage>("loading");
     const [tempMnemonic, setTempMnemonic] = useState<string | null>(null);
+    const { setHashed } = useHashed();
 
     useEffect(() => {
-        chrome.runtime.sendMessage({ type: "get_session" }, async (res) => {
-
-            const token = res.token;
-
-            if(token) {
+        chrome.runtime.sendMessage({ type: "IS_WALLET_UNLOCKED" }, async (res) => {
+            if(res.unlocked) {
+                console.log("unlocking wallet without pass and setting hashed: ", res.hashed);
+                setHashed(res.hashed);
                 setStage("dashboard");
                 return;
             }
-            chrome.runtime.sendMessage({ type: "clear_session" });
-
-        })
+        });
 
         chrome.storage.local.get("vault", (data) => {
             data.vault ? setStage("unlock") : setStage("import");
