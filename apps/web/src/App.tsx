@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense, lazy } from "react";
 import image from "../public/images/logo.png";
 import { useHashed } from "./context/HashedAtom";
+import { Hashed } from "./utils/hashed";
 
 type Stage = "loading" | "import" | "setPassword" | "unlock" | "dashboard";
 
@@ -21,7 +22,10 @@ export default function App() {
         chrome.runtime.sendMessage({ type: "IS_WALLET_UNLOCKED" }, async (res) => {
             if(res.unlocked) {
                 console.log("unlocking wallet without pass and setting hashed: ", res.hashed);
-                setHashed(res.hashed);
+                const newHashed = new Hashed();
+                newHashed.initHashedWithData(res.hashed as Hashed);
+                console.log("newHashed: ", newHashed);
+                setHashed(newHashed);
                 setStage("dashboard");
                 return;
             }

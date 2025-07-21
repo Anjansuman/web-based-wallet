@@ -24,7 +24,7 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
 
     const { showPanel } = usePopUp();
     // const { setAccounts } = useAccount();
-    const { setHashed } = useHashed();
+    const { hashed, setHashed } = useHashed();
 
     useEffect(() => {
         inputRef.current?.focus();
@@ -48,6 +48,10 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
             setError(false);
 
             hashedClass.fetchChromeData("accounts");
+
+            console.log("hashedClass: ", hashedClass);
+            console.log("hashed: ", hashed);
+
             onUnlock();
 
             // set the background active for unlocking the wallet for 15 mins after closing

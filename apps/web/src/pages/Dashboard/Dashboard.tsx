@@ -38,7 +38,7 @@ export default function Dashboard() {
         }
         getValue();
         // const ctx = setInterval(() => getValue(), 5000);
-        const repeatFetch = setInterval(() => getValue(), 4000);
+        const repeatFetch = setInterval(() => getValue(), 7000);
 
         return () => clearInterval(repeatFetch);
 
