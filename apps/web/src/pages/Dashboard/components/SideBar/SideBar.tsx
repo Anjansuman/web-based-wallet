@@ -166,7 +166,7 @@ export default function SideBar({ ref, close, addAccount, editAccounts, settings
                     <div className="text-[#ff4d67] text-sm">{accountData.name}</div>
                     <div
                         className="flex items-center cursor-pointer "
-                        onClick={() => handleCopy(accountData?.name)}
+                        onClick={() => handleCopy(accountData?.publicKey)}
                     >
                         <div className="text-white truncate overflow-hidden whitespace-nowrap max-w-[200px]">
                             {accountData.publicKey}
