@@ -2,6 +2,7 @@
     "manifest_version": 3,
     "name": "Hashed wallet",
     "version": "1.0",
+    "description": "Ethereum wallet",
     "icons": {
         "16": "images/logo.png",
         "32": "images/logo.png",
@@ -20,7 +21,8 @@
         "storage",
         "clipboardWrite",
         "tabs",
-        "scripting"
+        "scripting",
+        "activeTab"
     ],
     "host_permissions": [
         "<all_urls>"
@@ -33,13 +35,14 @@
             "js": [
                 "content-script.js"
             ],
-            "run_at": "document_start"
+            "run_at": "document_start",
+            "all_frames": true
         }
     ],
     "web_accessible_resources": [
         {
             "resources": [
-                "injected.js"
+                "inject.js"
             ],
             "matches": [
                 "<all_urls>"
