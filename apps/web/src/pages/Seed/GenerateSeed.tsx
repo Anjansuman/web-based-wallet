@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { IconCircleCheckFilled, IconCopy } from "@tabler/icons-react";
 import { usePopUp } from "../../context/PopUpPanelContext";
 import Button from "../../components/ui/Button";
-import { useHashed } from "../../context/HashedAtom";
+import { useHashedStore } from "../../store/hashed-store";
 import { Hashed } from "../../utils/hashed";
 
 interface GenerateSeedProps {
@@ -17,7 +17,7 @@ export default function GenerateSeed({ onComplete }: GenerateSeedProps) {
     const [isChecked, setIsChecked] = useState<boolean>(false);
 
     const { showPanel } = usePopUp();
-    const { setHashed } = useHashed();
+    const { setHashed } = useHashedStore();
 
 
     useEffect(() => {

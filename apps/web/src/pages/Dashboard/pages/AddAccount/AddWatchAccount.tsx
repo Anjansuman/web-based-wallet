@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from "react";
-import { useHashed } from '../../../../context/HashedAtom';
+import { useHashedStore } from '../../../../store/hashed-store';
 import Button from '../../../../components/ui/Button';
 import gsap from 'gsap';
 import { Input } from "../../../../components/ui/Input";
@@ -15,7 +15,7 @@ interface ReceiveProps {
 
 export const AddWatchAccount = ({ close }: ReceiveProps) => {
 
-    const { hashed } = useHashed();
+    const { hashed } = useHashedStore();
     const panelRef = useRef<HTMLDivElement>(null);
 
     const accountNameRef = useRef<HTMLInputElement>(null);

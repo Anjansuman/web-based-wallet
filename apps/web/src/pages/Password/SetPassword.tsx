@@ -6,7 +6,7 @@ import { usePopUp } from "../../context/PopUpPanelContext";
 import { IconEye, IconEyeOff } from "@tabler/icons-react";
 // import type { AccountType2 } from "../../types/AccountType";
 import { Hashed } from "../../utils/hashed";
-import { useHashed } from "../../context/HashedAtom";
+import { useHashedStore } from "../../store/hashed-store";
 
 
 interface setPasswordProps {
@@ -23,7 +23,7 @@ export default function SetPassword({ mnemonic, onComplete }: setPasswordProps) 
     const inputRef = useRef<HTMLInputElement>(null);
 
     const { showPanel } = usePopUp();
-    const { setHashed } = useHashed();
+    const { setHashed } = useHashedStore();
 
     useEffect(() => {
         inputRef.current?.focus();

@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from "react";
-import { useHashed } from '../../../../context/HashedAtom';
+import { useHashedStore } from '../../../../store/hashed-store';
 import Button from '../../../../components/ui/Button';
 import gsap from 'gsap';
 import type { SavedAddress } from "../../../../types/AccountType";
@@ -17,7 +17,7 @@ interface ReceiveProps {
 
 export const SavedAddresses = ({ close }: ReceiveProps) => {
 
-    const { hashed } = useHashed();
+    const { hashed } = useHashedStore();
     const panelRef = useRef<HTMLDivElement>(null);
 
     const [savedAddresses, setSavedAddresses] = useState<SavedAddress[] | null>(null);

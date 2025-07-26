@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NetworkTab } from "../NetworkTab/NetworkTab";
-import { useHashed } from "../../../../context/HashedAtom";
+import { useHashedStore } from "../../../../store/hashed-store";
 
 interface NavBarProps {
     sideBar: () => void
@@ -11,7 +11,7 @@ export const NavBar = ({ sideBar }: NavBarProps) => {
     const [networkTab, setNetworkTab] = useState<boolean>(false);
     const [currAccount, setCurrAccount] = useState<string>("");
 
-    const { hashed } = useHashed();
+    const { hashed } = useHashedStore();
 
     useEffect(() => {
         if(!hashed) return;

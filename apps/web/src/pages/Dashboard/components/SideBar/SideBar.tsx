@@ -2,7 +2,7 @@ import { IconArrowLeft, IconCircleCheckFilled, IconCopy, IconPencil, IconPlus, I
 import gsap from "gsap";
 import React, { useEffect, useRef, useState } from "react";
 import { usePopUp } from "../../../../context/PopUpPanelContext";
-import { useHashed } from "../../../../context/HashedAtom";
+import { useHashedStore } from "../../../../store/hashed-store";
 import type { Account } from "../../../../types/AccountType";
 
 interface SideBarProps {
@@ -15,7 +15,7 @@ interface SideBarProps {
 
 export default function SideBar({ ref, close, addAccount, editAccounts, settings }: SideBarProps) {
 
-    const { hashed } = useHashed();
+    const { hashed } = useHashedStore();
 
     const barRef = useRef<HTMLDivElement>(null);
     const popupRef = useRef<HTMLDivElement>(null);

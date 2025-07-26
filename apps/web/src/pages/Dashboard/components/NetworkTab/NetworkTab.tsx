@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from "react";
-import { useHashed } from '../../../../context/HashedAtom';
+import { useHashedStore } from '../../../../store/hashed-store';
 import Button from '../../../../components/ui/Button';
 import gsap from 'gsap';
 import { GrayButton } from "../../../../components/ui/GrayButton";
@@ -16,7 +16,7 @@ interface ReceiveProps {
 
 export const NetworkTab = ({ close }: ReceiveProps) => {
 
-    const { hashed } = useHashed();
+    const { hashed } = useHashedStore();
     const panelRef = useRef<HTMLDivElement>(null);
     const [selectedNetwork, setSelectedNetwork] = useState<Networks | null>(null);
 

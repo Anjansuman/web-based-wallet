@@ -7,7 +7,7 @@ import { useRef } from "react";
 // import { useAccount } from "../../context/Zustand";
 // import type { Account, AccountType2 } from "../../types/AccountType";
 // import { decryptString, PKBDF2 } from "../../utils/crypto";
-import { useHashed } from "../../context/HashedAtom";
+import { useHashedStore } from "../../store/hashed-store";
 import { Hashed } from "../../utils/hashed";
 import { Input } from "../../components/ui/Input";
 
@@ -24,7 +24,7 @@ export default function UnlockWallet({ onUnlock }: UnlockWalletProps) {
 
     const { showPanel } = usePopUp();
     // const { setAccounts } = useAccount();
-    const { hashed, setHashed } = useHashed();
+    const { hashed, setHashed } = useHashedStore();
 
     useEffect(() => {
         inputRef.current?.focus();

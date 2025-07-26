@@ -5,7 +5,7 @@ import BottomBar from "./components/BottomBar/BottomBar";
 import Value from "./components/Value/Value";
 import ActionButtons from "./components/ActionButtons/ActionButtons";
 import { Receive } from "./pages/Receive";
-import { useHashed } from "../../context/HashedAtom";
+import { useHashedStore } from "../../store/hashed-store";
 import { AddAccount } from "./pages/AddAccount/AddAccount";
 import { Settings } from "./pages/Settings";
 import { EditAccounts } from "./pages/EditAccounts/EditAccounts";
@@ -23,7 +23,7 @@ export default function Dashboard() {
 
     const [balance, setBalance] = useState<{ token: string, USD: string }>({ token: "0.0", USD: "0.0" });
 
-    const { hashed } = useHashed();
+    const { hashed } = useHashedStore();
 
     useEffect(() => {
         if (!hashed) return;

@@ -2,13 +2,13 @@ import { create } from "zustand";
 import type { Hashed } from "../utils/hashed";
 
 
-interface useHashed {
+interface useHashedStore {
     hashed: Hashed | null,
     setHashed: (hashed: Hashed) => void,
     removeHashed: () => void
 }
 
-export const useHashed = create<useHashed>((set) => ({
+export const useHashedStore = create<useHashedStore>((set) => ({
     hashed: null,
     setHashed: (hashed) => {
         set((state) => {

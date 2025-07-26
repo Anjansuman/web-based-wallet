@@ -1,0 +1,8 @@
+
+export enum PAGE {
+    LOADING = "LOADING",
+    IMPORT = "IMPORT",
+    SET_PASSWORD = "SET_PASSWORD",
+    UNLOCK = "UNLOCK",
+    DASHBOARD = "DASHBOARD"
+}

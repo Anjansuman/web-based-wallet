@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from "react";
-import { useHashed } from '../../../../context/HashedAtom';
+import { useHashedStore } from '../../../../store/hashed-store';
 import Button from '../../../../components/ui/Button';
 import gsap from 'gsap';
 import type { Account } from "../../../../types/AccountType";
@@ -16,7 +16,7 @@ interface ReceiveProps {
 
 export const EditAccounts = ({ close }: ReceiveProps) => {
 
-    const { hashed } = useHashed();
+    const { hashed } = useHashedStore();
     const [accounts, setAccounts] = useState<Account[]>();
     const panelRef = useRef<HTMLDivElement>(null);
 

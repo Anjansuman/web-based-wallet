@@ -2,7 +2,7 @@
 import { generate } from 'lean-qr';
 import { makeAsyncComponent } from 'lean-qr/extras/react';
 import React, { useEffect, useRef, useState } from "react";
-import { useHashed } from '../../../context/HashedAtom';
+import { useHashedStore } from '../../../store/hashed-store';
 import Button from '../../../components/ui/Button';
 import gsap from 'gsap';
 
@@ -15,7 +15,7 @@ interface ReceiveProps {
 
 export const Receive = ({ close, publicKey }: ReceiveProps) => {
 
-    const { hashed } = useHashed();
+    const { hashed } = useHashedStore();
     const [pubKey, setPubKey] = useState<string>();
     const panelRef = useRef<HTMLDivElement>(null);
 
