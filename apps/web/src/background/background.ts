@@ -2,7 +2,9 @@ import type { Hashed } from "../utils/hashed";
 import { createStore } from 'zustand/vanilla';
 import type { backgroundMessage } from "../types/background-message-type";
 import { MESSAGE } from "../enums/message-enum";
-import { RPC_METHODS } from "../enums/rpc-enum";
+import { RPC_METHODS } from "../enums/rpc-methods-enum";
+
+// currently it doesn't send any req to the client code
 
 // Keep your existing store
 export interface HashedState {
@@ -135,7 +137,6 @@ class WalletBackground {
         }
     }
 
-    // New method for handling web3 provider requests
     private async handleWalletRequest(msg: { method: string, params: any[], id: number }, sendResponse: Function) {
         const { method, params = [] } = msg;
 
@@ -196,7 +197,6 @@ class WalletBackground {
         }
     }
 
-    // Web3 provider methods
     private async requestAccounts(): Promise<string[]> {
         if (!this.isWalletUnlocked()) {
             await this.openPopup();
@@ -314,7 +314,6 @@ class WalletBackground {
         return null;
     }
 
-    // Utility methods
     private async openPopup() {
         return new Promise<void>((resolve) => {
             chrome.windows.create({
@@ -411,5 +410,4 @@ class WalletBackground {
     }
 }
 
-// Initialize the wallet background service
 new WalletBackground();

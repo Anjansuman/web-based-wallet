@@ -1,33 +1,8 @@
-// inject.ts - Injected script with proper TypeScript support
+// inject.ts - Injected script with debugging
 
-// Extend the Window interface to include ethereum
+console.log('🟢 Inject script starting...');
 
-// Define the EIP-1193 provider interface with custom extensions
-interface EIP1193Provider {
-    request(args: { method: string; params?: any[] }): Promise<any>;
-    on(event: string, listener: (...args: any[]) => void): void;
-    removeListener(event: string, listener: (...args: any[]) => void): void;
-    emit(event: string, ...args: any[]): void;
-}
-
-// Extended interface for our custom wallet provider
-interface EthereumProvider extends EIP1193Provider {
-    // Standard EIP-1193 properties
-    chainId: string;
-    selectedAddress: string | null;
-    isConnected: boolean;
-    
-    // Custom wallet identification properties
-    isYourWallet: boolean;
-    isMetaMask: boolean; // For compatibility
-    
-    // Legacy methods for compatibility
-    enable(): Promise<string[]>;
-    isUnlocked(): Promise<boolean>;
-    send(method: string, params?: any[]): Promise<any>;
-    send(payload: any, callback: (error: any, result?: any) => void): void;
-    sendAsync(payload: any, callback: (error: any, result?: any) => void): void;
-}
+// Interfaces are now defined in global.d.ts
 
 // Define message types
 interface WalletRequest {
@@ -56,11 +31,11 @@ interface PendingRequest {
         public chainId: string = '0x1'; // Ethereum mainnet
         public selectedAddress: string | null = null;
         public isConnected: boolean = false;
-        
+
         // Custom wallet identification
         public readonly isYourWallet: boolean = true;
         public readonly isMetaMask: boolean = true; // For compatibility
-        
+
         // Private properties
         private _requestId: number = 0;
         private _pendingRequests: Map<number, PendingRequest> = new Map();
@@ -69,7 +44,7 @@ interface PendingRequest {
         constructor() {
             // Listen for responses from content script
             window.addEventListener('message', this._handleMessage.bind(this));
-            
+
             // Listen for wallet state changes
             window.addEventListener('message', this._handleWalletEvents.bind(this));
         }
@@ -133,7 +108,7 @@ interface PendingRequest {
         // Handle messages from content script
         private _handleMessage(event: MessageEvent): void {
             if (event.source !== window) return;
-            
+
             const data = event.data as WalletResponse;
             if (data.type !== 'WALLET_RESPONSE') return;
 
@@ -153,26 +128,26 @@ interface PendingRequest {
         // Handle wallet state change events
         private _handleWalletEvents(event: MessageEvent): void {
             if (event.source !== window) return;
-            
+
             const { type, ...data } = event.data;
-            
+
             switch (type) {
                 case 'WALLET_UNLOCKED':
                     this.isConnected = true;
                     this.emit('connect', { chainId: this.chainId });
                     break;
-                    
+
                 case 'WALLET_LOCKED':
                     this.isConnected = false;
                     this.selectedAddress = null;
                     this.emit('disconnect');
                     break;
-                    
+
                 case 'CHAIN_CHANGED':
                     this.chainId = data.chainId;
                     this.emit('chainChanged', data.chainId);
                     break;
-                    
+
                 case 'ACCOUNTS_CHANGED':
                     this.selectedAddress = data.accounts?.[0] || null;
                     this.emit('accountsChanged', data.accounts || []);
@@ -235,7 +210,7 @@ interface PendingRequest {
     // EIP-6963 - Multi Injector Discovery
     const providerInfo = {
         uuid: crypto.randomUUID(), // Generate unique UUID
-        name: 'Your Wallet',
+        name: 'Hashed',
         icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzAwN0ZGRiIvPgo8cGF0aCBkPSJNMTYgOEwxMCAxNkwxNiAyNEwyMiAxNkwxNiA4WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+', // Simple wallet icon
         rdns: 'com.yourwallet.extension'
     };
@@ -252,5 +227,4 @@ interface PendingRequest {
         window.dispatchEvent(announceEvent);
     });
 
-    console.log('Your Wallet provider injected successfully');
 })();

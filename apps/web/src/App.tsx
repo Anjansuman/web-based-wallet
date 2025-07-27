@@ -39,6 +39,10 @@ export default function App() {
         });
     }, []);
 
+    useEffect(() => {
+
+    }, [page]);
+
     if (page === PAGE.LOADING) return null;
 
     return (
