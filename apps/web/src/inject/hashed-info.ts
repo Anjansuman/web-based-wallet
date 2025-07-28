@@ -1,0 +1,8 @@
+
+
+export const hashedInfo = {
+    uuid: crypto.randomUUID(),
+    name: 'Hashed',
+    icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzAwN0ZGRiIvPgo8cGF0aCBkPSJNMTYgOEwxMCAxNkwxNiAyNEwyMiAxNkwxNiA4WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+',
+    rdns: 'com.hashed.extension'
+};

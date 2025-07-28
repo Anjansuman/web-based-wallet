@@ -1,163 +1,155 @@
 // inject.ts - Injected script with debugging
 
-console.log('🟢 Inject script starting...');
+// import { EthereumProviderImpl } from "./inject-abstraction";
+import { WALLET_EVENT } from "../enums/inject-wallet-event-enum";
+import { RPC_METHODS } from "../enums/rpc-methods-enum";
+import type { PendingRequest, WalletRequest, WalletResponse } from "../types/inject-type";
+import { hashedInfo } from "./hashed-info";
 
-// Interfaces are now defined in global.d.ts
+console.log('Inject script starting...');
 
-// Define message types
-interface WalletRequest {
-    type: 'WALLET_REQUEST';
-    method: string;
-    params: any[];
-    id: number;
-}
-
-interface WalletResponse {
-    type: 'WALLET_RESPONSE';
-    id: number;
-    result?: any;
-    error?: string;
-}
-
-interface PendingRequest {
-    resolve: (value: any) => void;
-    reject: (reason: any) => void;
-}
 
 // Implementation
 (function () {
+
     class EthereumProviderImpl implements EthereumProvider {
-        // Standard properties
-        public chainId: string = '0x1'; // Ethereum mainnet
+
+        public chainId: string = "0x1";
         public selectedAddress: string | null = null;
         public isConnected: boolean = false;
 
-        // Custom wallet identification
-        public readonly isYourWallet: boolean = true;
-        public readonly isMetaMask: boolean = true; // For compatibility
+        public readonly isHashed: boolean = true;
+        // public readonly isMetaMask: boolean = true;
 
-        // Private properties
         private _requestId: number = 0;
-        private _pendingRequests: Map<number, PendingRequest> = new Map();
-        private _eventListeners: Map<string, Array<(...args: any[]) => void>> = new Map();
+        private _pendingRequests: Map<number, PendingRequest> = new Map(); // id -> pending-requests
+        private _eventListeners: Map<string, Array<(...args: any[]) => void>> = new Map(); // event -> listener
 
         constructor() {
+
             // Listen for responses from content script
             window.addEventListener('message', this._handleMessage.bind(this));
 
             // Listen for wallet state changes
             window.addEventListener('message', this._handleWalletEvents.bind(this));
+
         }
 
-        // EIP-1193 request method
-        async request({ method, params = [] }: { method: string; params?: any[] }): Promise<any> {
+        // EIP-1193 request
+        async request({ method, params = [] }: { method: string, params?: any[] }): Promise<any> {
             return new Promise((resolve, reject) => {
                 const id = ++this._requestId;
 
                 this._pendingRequests.set(id, { resolve, reject });
 
                 const message: WalletRequest = {
-                    type: 'WALLET_REQUEST',
-                    method,
-                    params,
+                    type: WALLET_EVENT.WALLET_REQUEST,
+                    method: method,
+                    params: params,
                     id
                 };
 
-                window.postMessage(message, '*');
+                window.postMessage(message, "*");
 
-                // Set timeout for requests (30 seconds)
+                // wait for response for 30sec
                 setTimeout(() => {
-                    if (this._pendingRequests.has(id)) {
-                        this._pendingRequests.delete(id);
-                        reject(new Error('Request timeout'));
-                    }
+                    this.deletePendingRequest(id, reject);
                 }, 30000);
             });
         }
 
-        // Event listener methods
         on(event: string, listener: (...args: any[]) => void): void {
             if (!this._eventListeners.has(event)) {
                 this._eventListeners.set(event, []);
             }
-            this._eventListeners.get(event)!.push(listener);
+            this._eventListeners.get(event)?.push(listener);
         }
 
         removeListener(event: string, listener: (...args: any[]) => void): void {
-            if (this._eventListeners.has(event)) {
-                const listeners = this._eventListeners.get(event)!;
-                const index = listeners.indexOf(listener);
-                if (index > -1) {
-                    listeners.splice(index, 1);
-                }
+            if (!this._eventListeners.has(event)) {
+                return;
             }
+            const presentListeners = this._eventListeners.get(event)!;
+            const index = presentListeners.indexOf(listener);
+
+            if (index < 0) {
+                return;
+            }
+            presentListeners.splice(index, 1);
+
         }
 
         emit(event: string, ...args: any[]): void {
-            if (this._eventListeners.has(event)) {
-                this._eventListeners.get(event)!.forEach(listener => {
-                    try {
-                        listener(...args);
-                    } catch (error) {
-                        console.error('Error in event listener:', error);
-                    }
-                });
+            if (!this._eventListeners.has(event)) {
+                return;
             }
+
+            this._eventListeners.get(event)!.forEach(listener => {
+                try {
+                    listener(...args);
+                } catch (error) {
+                    console.error("Error in event listener: ", error);
+                }
+            });
         }
 
-        // Handle messages from content script
         private _handleMessage(event: MessageEvent): void {
             if (event.source !== window) return;
 
             const data = event.data as WalletResponse;
-            if (data.type !== 'WALLET_RESPONSE') return;
+            if (data.type !== WALLET_EVENT.WALLET_RESPONSE) return;
 
             const { id, result, error } = data;
             const request = this._pendingRequests.get(id);
 
-            if (request) {
-                this._pendingRequests.delete(id);
-                if (error) {
-                    request.reject(new Error(error));
-                } else {
-                    request.resolve(result);
-                }
+            if (!request) {
+                return;
+            }
+
+            this._pendingRequests.delete(id);
+            if (error) {
+                request.reject(new Error(error));
+            } else {
+                request.resolve(result);
             }
         }
 
-        // Handle wallet state change events
         private _handleWalletEvents(event: MessageEvent): void {
             if (event.source !== window) return;
 
             const { type, ...data } = event.data;
 
             switch (type) {
-                case 'WALLET_UNLOCKED':
+                case WALLET_EVENT.WALLET_UNLOCKED:
                     this.isConnected = true;
                     this.emit('connect', { chainId: this.chainId });
-                    break;
+                    return;
 
-                case 'WALLET_LOCKED':
+                case WALLET_EVENT.WALLET_LOCKED:
                     this.isConnected = false;
                     this.selectedAddress = null;
                     this.emit('disconnect');
-                    break;
+                    return;
 
-                case 'CHAIN_CHANGED':
+                case WALLET_EVENT.CHAIN_CHANGED:
                     this.chainId = data.chainId;
                     this.emit('chainChanged', data.chainId);
-                    break;
+                    return;
 
-                case 'ACCOUNTS_CHANGED':
-                    this.selectedAddress = data.accounts?.[0] || null;
-                    this.emit('accountsChanged', data.accounts || []);
-                    break;
+                case WALLET_EVENT.ACCOUNTS_CHANGED:
+                    this.selectedAddress = data.accounts[0] || null;
+                    this.emit('accountsChanged', data.accounts || null);
+                    return;
+
+                default:
+                    // throw error
+                    return;
             }
         }
 
-        // Convenience methods for common operations
         async enable(): Promise<string[]> {
-            const accounts = await this.request({ method: 'eth_requestAccounts' });
+            const accounts = await this.request({ method: RPC_METHODS.ETH_REQUEST_ACCOUNTS });
+
             if (accounts && accounts.length > 0) {
                 this.selectedAddress = accounts[0];
                 this.isConnected = true;
@@ -166,12 +158,10 @@ interface PendingRequest {
         }
 
         async isUnlocked(): Promise<boolean> {
-            return this.request({ method: 'wallet_isUnlocked' });
+            return this.request({ method: RPC_METHODS.WALLET_IS_UNLOCKED });
         }
 
-        // Legacy methods for compatibility
         send(methodOrPayload: string | any, callbackOrParams?: any): any {
-            // Handle string method with params
             if (typeof methodOrPayload === 'string') {
                 return this.request({
                     method: methodOrPayload,
@@ -179,15 +169,13 @@ interface PendingRequest {
                 });
             }
 
-            // Handle object payload with callback
-            if (typeof callbackOrParams === 'function') {
+            if (typeof callbackOrParams === "function") {
                 this.request(methodOrPayload)
                     .then(result => callbackOrParams(null, { result }))
                     .catch(error => callbackOrParams(error));
                 return;
             }
 
-            // Handle object payload without callback (return promise)
             return this.request(methodOrPayload);
         }
 
@@ -196,6 +184,14 @@ interface PendingRequest {
                 .then(result => callback(null, { result }))
                 .catch(error => callback(error));
         }
+
+        private deletePendingRequest(id: number, reject: (reason: any) => void) {
+            if (this._pendingRequests.has(id)) {
+                this._pendingRequests.delete(id);
+                reject(new Error("Request timeout"));
+            }
+        }
+
     }
 
     // Create and inject the provider
@@ -208,12 +204,7 @@ interface PendingRequest {
     window.dispatchEvent(new Event('ethereum#initialized'));
 
     // EIP-6963 - Multi Injector Discovery
-    const providerInfo = {
-        uuid: crypto.randomUUID(), // Generate unique UUID
-        name: 'Hashed',
-        icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iIzAwN0ZGRiIvPgo8cGF0aCBkPSJNMTYgOEwxMCAxNkwxNiAyNEwyMiAxNkwxNiA4WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+', // Simple wallet icon
-        rdns: 'com.yourwallet.extension'
-    };
+    const providerInfo = hashedInfo;
 
     // Announce provider for EIP-6963 discovery
     const announceEvent = new CustomEvent('eip6963:announceProvider', {
