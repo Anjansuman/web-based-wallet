@@ -18,7 +18,12 @@ export default defineConfig({
                 "inject": resolve(__dirname, "src/inject/inject.ts"),
             },
             output: {
-                entryFileNames: `[name].js`, // remove hash
+                entryFileNames: (chunkInfo) => {
+                    if(chunkInfo.name === "inject") {
+                        return `[name].js`;
+                    }
+                    return `[name].js`;
+                }
             }
         },
         outDir: "dist",

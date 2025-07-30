@@ -1,13 +1,26 @@
 // content-script.ts - Content script with debugging
 
-import { WALLET_EVENT } from "../enums/inject-wallet-event-enum";
-import type { WalletRequest, WalletResponse } from "../types/inject-type";
+// import { WALLET_EVENT } from "../enums/inject-wallet-event-enum";
 
 console.log('🔵 Content script starting to load...');
 
+// Message types for communication
+interface WalletRequestMessage {
+    type: 'WALLET_REQUEST';
+    method: string;
+    params: any[];
+    id: number;
+}
+
+interface WalletResponseMessage {
+    type: 'WALLET_RESPONSE';
+    id: number;
+    result?: any;
+    error?: string;
+}
 
 interface WalletEventMessage {
-    type: WALLET_EVENT,
+    type: 'WALLET_UNLOCKED' | 'WALLET_LOCKED' | 'CHAIN_CHANGED' | 'ACCOUNTS_CHANGED';
     [key: string]: any;
 }
 
@@ -49,13 +62,13 @@ interface WalletEventMessage {
         console.log('🔵 Content script received message:', event.data);
 
         if (event.data.type === 'WALLET_REQUEST') {
-            const requestData = event.data as WalletRequest;
+            const requestData = event.data as WalletRequestMessage;
 
             try {
                 console.log('🔵 Forwarding to background:', requestData);
                 // Forward to background script
                 const response = await chrome.runtime.sendMessage({
-                    type: WALLET_EVENT.WALLET_REQUEST,
+                    type: 'WALLET_REQUEST',
                     method: requestData.method,
                     params: requestData.params,
                     id: requestData.id
@@ -64,8 +77,8 @@ interface WalletEventMessage {
                 console.log('🔵 Background response:', response);
 
                 // Send response back to page
-                const responseMessage: WalletResponse = {
-                    type: WALLET_EVENT.WALLET_RESPONSE,
+                const responseMessage: WalletResponseMessage = {
+                    type: 'WALLET_RESPONSE',
                     id: requestData.id,
                     result: response.result,
                     error: response.error
@@ -75,8 +88,8 @@ interface WalletEventMessage {
             } catch (error) {
                 console.error('❌ Content script error:', error);
                 // Handle chrome.runtime errors (extension context invalidated, etc.)
-                const errorMessage: WalletResponse = {
-                    type: WALLET_EVENT.WALLET_RESPONSE,
+                const errorMessage: WalletResponseMessage = {
+                    type: 'WALLET_RESPONSE',
                     id: requestData.id,
                     error: error instanceof Error ? error.message : 'Extension communication failed'
                 };
@@ -90,7 +103,7 @@ interface WalletEventMessage {
     chrome.runtime.onMessage.addListener((message: WalletEventMessage, _sender, _sendResponse) => {
         console.log('🔵 Content script received background message:', message);
         // Forward wallet events to the page
-        if ([WALLET_EVENT.WALLET_UNLOCKED, WALLET_EVENT.WALLET_LOCKED, WALLET_EVENT.CHAIN_CHANGED, WALLET_EVENT.ACCOUNTS_CHANGED].includes(message.type)) {
+        if (['WALLET_UNLOCKED', 'WALLET_LOCKED', 'CHAIN_CHANGED', 'ACCOUNTS_CHANGED'].includes(message.type)) {
             window.postMessage(message, '*');
         }
 

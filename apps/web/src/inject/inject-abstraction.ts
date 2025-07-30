@@ -1,23 +1,24 @@
+// import { WALLET_EVENT } from "../enums/inject-wallet-event-enum";
 import { WALLET_EVENT } from "../enums/inject-wallet-event-enum";
 import { RPC_METHODS } from "../enums/rpc-methods-enum";
-import type { PendingRequest, WalletRequest, WalletResponse } from "../types/inject-type";
-
+import type { PendingRequest, WalletRequest, WalletResponse } from "../types/req-res-type";
 
 
 export class EthereumProviderImpl implements EthereumProvider {
-
+    
     public chainId: string = "0x1";
     public selectedAddress: string | null = null;
     public isConnected: boolean = false;
 
     public readonly isHashed: boolean = true;
-    // public readonly isMetaMask: boolean = true;
-
+    public readonly isMetaMask: boolean = true;
+    
     private _requestId: number = 0;
     private _pendingRequests: Map<number, PendingRequest> = new Map(); // id -> pending-requests
     private _eventListeners: Map<string, Array<(...args: any[]) => void>> = new Map(); // event -> listener
-
+    
     constructor() {
+        console.log("Inject abstraction called");
 
         // Listen for responses from content script
         window.addEventListener('message', this._handleMessage.bind(this));
